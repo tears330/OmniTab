@@ -39,35 +39,21 @@ jobs:
         run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
         
       - name: Create Release
-        uses: actions/create-release@v1
-        id: create_release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref_name }}
-          release_name: OmniTab v${{ steps.package_version.outputs.version }}
-          body: |
-            ## OmniTab Chrome Extension v${{ steps.package_version.outputs.version }}
+        run: |
+          gh release create ${{ github.ref_name }} \
+            --title "OmniTab v${{ steps.package_version.outputs.version }}" \
+            --notes "## OmniTab Chrome Extension v${{ steps.package_version.outputs.version }}
             
             ### Installation
-            1. Download the `omnitab-extension.zip` file below
+            1. Download the \`omnitab-extension.zip\` file below
             2. Extract the ZIP file
-            3. Open Chrome and go to `chrome://extensions/`
-            4. Enable "Developer mode" in the top right
-            5. Click "Load unpacked" and select the extracted folder
+            3. Open Chrome and go to \`chrome://extensions/\`
+            4. Enable \"Developer mode\" in the top right
+            5. Click \"Load unpacked\" and select the extracted folder
             6. Use Ctrl/Cmd+J to open OmniTab
             
             ### Changes
-            See commit history for detailed changes in this release.
-          draft: false
-          prerelease: false
-          
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./omnitab-extension.zip
-          asset_name: omnitab-extension.zip
-          asset_content_type: application/zip
+            See commit history for detailed changes in this release." \
+            ./omnitab-extension.zip
