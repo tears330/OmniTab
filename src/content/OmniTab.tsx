@@ -191,56 +191,46 @@ export default function OmniTab({ onClose }: OmniTabProps) {
 
   return (
     <div
-      className='fixed inset-0 z-[999999] flex items-start justify-center bg-black/40 backdrop-blur-md'
+      data-omnitab
+      className='fixed inset-0 z-[999999] flex items-start justify-center bg-black/50 backdrop-blur-2xl'
       onClick={onClose}
-      onKeyDown={() => {}}
+      onKeyDown={(e) => {
+        e.stopPropagation();
+      }}
       role='button'
       tabIndex={0}
     >
       <div
-        className='fade-in slide-in-from-top-4 mt-16 w-full max-w-2xl transform animate-in duration-200'
+        className='fade-in slide-in-from-top-4 mt-40 w-full max-w-3xl transform animate-in duration-200'
         onClick={(e) => e.stopPropagation()}
-        onKeyDown={() => {}}
+        onKeyDown={(e) => {
+          e.stopPropagation();
+        }}
         role='presentation'
       >
-        <div className='overflow-hidden rounded-lg bg-white/95 shadow-2xl ring-1 ring-black/5 backdrop-blur-xl dark:bg-gray-900/95 dark:ring-white/10'>
-          <div className='px-4 py-2'>
+        <div className='overflow-hidden rounded-xl bg-gray-900/95 shadow-2xl ring-1 ring-white/10 backdrop-blur-xl'>
+          <div className='mx-3 mb-1 flex items-center rounded-lg px-3 py-3.5'>
             <input
               ref={inputRef}
               type='text'
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder='Search tabs...'
-              className='w-full border-0 bg-transparent py-2.5 text-sm font-medium text-gray-900 placeholder-gray-400 focus:outline-none dark:text-gray-100 dark:placeholder-gray-500'
+              onKeyDown={(e) => {
+                e.stopPropagation();
+                handleKeyDown(e);
+              }}
+              placeholder='Search for tabs...'
+              className='w-full border-0 bg-transparent text-lg text-gray-100 placeholder-gray-500 focus:outline-none'
               autoComplete='off'
               spellCheck={false}
             />
-            {(searchTerm || tabs.length > 0) && (
-              <div className='mt-1 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent dark:via-gray-700' />
-            )}
           </div>
 
           {searchTerm && tabs.length === 0 && (
-            <div className='px-4 py-8 text-center'>
-              <div className='text-gray-400 dark:text-gray-500'>
-                <svg
-                  className='mx-auto mb-2 h-6 w-6'
-                  fill='none'
-                  viewBox='0 0 24 24'
-                  stroke='currentColor'
-                >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={1.5}
-                    d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'
-                  />
-                </svg>
-                <p className='text-sm font-medium text-gray-600 dark:text-gray-300'>
-                  No tabs found
-                </p>
-                <p className='mt-1 text-xs text-gray-500 dark:text-gray-500'>
+            <div className='px-6 py-12 text-center'>
+              <div className='text-gray-500'>
+                <p className='text-sm'>No results found</p>
+                <p className='mt-1 text-xs text-gray-600'>
                   Try a different search term
                 </p>
               </div>
@@ -248,17 +238,15 @@ export default function OmniTab({ onClose }: OmniTabProps) {
           )}
 
           {tabs.length > 0 && (
-            <div className='max-h-80 overflow-y-auto'>
+            <div className='max-h-[420px] overflow-y-auto'>
               {tabs.map((tab, index) => (
                 <div
                   key={tab.id}
                   ref={(el) => {
                     resultRefs.current[index] = el;
                   }}
-                  className={`group flex cursor-pointer items-center gap-3 px-4 py-2.5 transition-all duration-100 hover:bg-gray-50/80 dark:hover:bg-gray-800/40 ${
-                    index === selectedIndex
-                      ? 'bg-blue-50/80 dark:bg-blue-900/20'
-                      : ''
+                  className={`group mx-3 mb-1 flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 transition-colors duration-150 ${
+                    index === selectedIndex ? 'bg-white/10' : 'hover:bg-white/5'
                   }`}
                   onClick={() => handleTabClick(tab, index)}
                   onKeyDown={(e) => {
@@ -270,11 +258,11 @@ export default function OmniTab({ onClose }: OmniTabProps) {
                   tabIndex={0}
                 >
                   <div className='flex-shrink-0'>
-                    <div className='flex h-5 w-5 items-center justify-center rounded bg-white shadow-sm ring-1 ring-gray-200 dark:bg-gray-800 dark:ring-gray-700'>
+                    <div className='flex h-8 w-8 items-center justify-center rounded-md bg-gray-800/50 ring-1 ring-white/5'>
                       <img
                         src={resolveFaviconUrl(tab.favIconUrl, tab.url)}
                         alt=''
-                        className='h-3.5 w-3.5 rounded-sm'
+                        className='h-4 w-4'
                         onError={(e) => {
                           const img = e.target as HTMLImageElement;
                           const defaultIcon =
@@ -289,10 +277,10 @@ export default function OmniTab({ onClose }: OmniTabProps) {
                     </div>
                   </div>
                   <div className='min-w-0 flex-1'>
-                    <div className='truncate text-sm font-medium text-gray-900 dark:text-gray-100'>
+                    <div className='truncate text-sm font-medium text-gray-100'>
                       {tab.title}
                     </div>
-                    <div className='truncate text-xs text-gray-500 dark:text-gray-400'>
+                    <div className='mt-0.5 truncate text-xs text-gray-500'>
                       {(() => {
                         try {
                           return new URL(tab.url).hostname;
@@ -302,41 +290,34 @@ export default function OmniTab({ onClose }: OmniTabProps) {
                       })()}
                     </div>
                   </div>
-                  {index === selectedIndex && (
-                    <div className='flex items-center gap-1'>
-                      <kbd className='inline-flex h-4 min-w-[16px] items-center justify-center rounded border border-gray-200 bg-gray-50 px-1 font-mono text-[9px] font-medium text-gray-600 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300'>
-                        ↵
-                      </kbd>
-                      <kbd className='inline-flex h-4 min-w-[16px] items-center justify-center rounded border border-gray-200 bg-gray-50 px-1 font-mono text-[9px] font-medium text-gray-600 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300'>
-                        ⌘↵
-                      </kbd>
-                    </div>
-                  )}
+                  <div className='flex-shrink-0'>
+                    <span className='text-xs text-gray-600'>Tab</span>
+                  </div>
                 </div>
               ))}
             </div>
           )}
 
           {tabs.length > 0 && (
-            <div className='border-t border-gray-100 bg-gray-50/50 px-4 py-2.5 dark:border-gray-800 dark:bg-gray-900/50'>
-              <div className='flex items-center justify-between text-xs text-gray-500 dark:text-gray-400'>
-                <div className='flex items-center gap-4'>
-                  <div className='flex items-center gap-1.5'>
-                    <kbd className='inline-flex h-4 min-w-[16px] items-center justify-center rounded border border-gray-200 bg-white px-1 font-mono text-[9px] font-medium text-gray-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400'>
-                      ↑↓
-                    </kbd>
-                    <span className='text-[11px] font-medium'>Navigate</span>
-                  </div>
-                  <div className='flex items-center gap-1.5'>
-                    <kbd className='inline-flex h-4 min-w-[16px] items-center justify-center rounded border border-gray-200 bg-white px-1 font-mono text-[9px] font-medium text-gray-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400'>
-                      esc
-                    </kbd>
-                    <span className='text-[11px] font-medium'>Close</span>
-                  </div>
-                </div>
-                <div className='text-[11px] font-medium text-gray-600 dark:text-gray-300'>
-                  {tabs.length} {tabs.length === 1 ? 'result' : 'results'}
-                </div>
+            <div className='border-t border-white/5 bg-gray-800/30 px-6 py-3'>
+              <div className='flex items-center justify-end gap-4 text-xs text-gray-500'>
+                <span>Open Tab</span>
+                <kbd className='rounded bg-gray-700/50 px-1.5 py-0.5 font-mono text-[10px]'>
+                  ↵
+                </kbd>
+                <div className='h-3 w-px bg-gray-700' />
+                <button
+                  type='button'
+                  className='flex items-center gap-1.5 hover:text-gray-300'
+                >
+                  <span>Actions</span>
+                </button>
+                <kbd className='rounded bg-gray-700/50 px-1.5 py-0.5 font-mono text-[10px]'>
+                  ⌘
+                </kbd>
+                <kbd className='rounded bg-gray-700/50 px-1.5 py-0.5 font-mono text-[10px]'>
+                  K
+                </kbd>
               </div>
             </div>
           )}
