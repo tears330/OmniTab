@@ -1,4 +1,3 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { defineManifest } from '@crxjs/vite-plugin';
 
 import packageData from '../package.json';
@@ -16,23 +15,25 @@ export default defineManifest({
     service_worker: 'src/background/index.ts',
     type: 'module',
   },
-  options_page: 'src/options/index.html',
-  action: {
-    default_popup: 'src/popup/index.html',
-    default_icon: {
-      16: 'icon16.png',
-      32: 'icon32.png',
-      48: 'icon48.png',
-      128: 'icon128.png',
-    },
-  },
   icons: {
     16: 'icon16.png',
     32: 'icon32.png',
     48: 'icon48.png',
     128: 'icon128.png',
   },
-  permissions: ['activeTab', 'storage'],
+  permissions: ['tabs'],
+  action: {
+    default_title: 'Open OmniTab search',
+  },
+  commands: {
+    _execute_action: {
+      suggested_key: {
+        default: 'Ctrl+J',
+        mac: 'Command+J',
+      },
+      description: 'Open OmniTab search',
+    },
+  },
   content_scripts: [
     {
       js: isDev

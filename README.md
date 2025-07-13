@@ -1,27 +1,67 @@
-# 🚀 Chrome Extension Starter Kit 
+# 🚀 OmniTab - Spotlight for Your Browser
 
-Get started with building your dream Chrome extension effortlessly! Our starter kit combines the power of cutting-edge technologies like Vite, TypeScript, React, CRX, Tailwind CSS, and DaisyUI, making extension development a breeze.
+OmniTab is a keyboard-first tab manager that brings a Spotlight-like experience to your browser. Instantly search and switch between tabs with a beautiful command palette interface.
 
-Why choose this template? 🤔 Well, there are countless templates out there, but if you're eyeing Tailwind for your Chrome extension, you're in luck! 🎉 With this template, diving into extension development becomes a breeze – no configuration needed! 💻
+## ✨ Features
 
-## Key Features
-- 🛠️ **Vite**: for lightning-fast development and hot module replacement.
-- 🧰 **TypeScript**: for type safety and enhanced productivity.
-- ⚛️ **React**: for building dynamic and interactive UI components.
-- 📦 **CRX**: for easy packaging and distribution of your extension.
-- 🎨 **Tailwind CSS**: for hassle-free styling, including seamless integration in content scripts.
-- 🌼 **DaisyUI**: for beautiful and customizable UI elements right out of the box.
+- **Instant Search**: Search through all your open tabs by title or URL
+- **Keyboard Navigation**: Navigate results with arrow keys
+- **Quick Actions**:
+  - `Enter` to switch to a tab
+  - `Ctrl/Cmd + Enter` to close a tab
+- **Minimal UI**: Clean, distraction-free interface that appears on demand
+- **Fast & Responsive**: Built with performance in mind
 
-## Why Choose Our Starter Kit?
-- 🚀 **Streamlined Setup**: Say goodbye to configuration headaches. Get up and running in minutes.
-- ⚡ **Optimized Performance**: Leverage Vite's speed and Tailwind CSS's efficiency for blazing-fast development.
-- 👩‍💻 **Developer-Friendly**: TypeScript support and React components empower developers to build feature-rich extensions with ease.
+## 🎯 Usage
 
-## 🚀 Get Started
-- 1️⃣ Clone the repo: git clone https://github.com/rezasohrabi/chrome-ext-starter.git
-- 2️⃣ Install dependencies: pnpm install
-- 3️⃣ Start development: pnpm dev
-- 4️⃣ Build for production: pnpm build
+1. Press `Ctrl+J` (Windows/Linux) or `Cmd+J` (Mac) to open OmniTab
+2. Start typing to search through your tabs
+3. Use arrow keys to navigate results
+4. Press `Enter` to switch to the selected tab
+5. Press `Escape` to close OmniTab
 
-### 🤝 How to Contribute
-We welcome and appreciate contributions to improve this project. Whether you would like to fix a bug, introduce a new feature, or enhance the documentation, your contributions are highly valued.
+## 🛠️ Development
+
+### Prerequisites
+
+- Node.js 20.x or higher
+- pnpm 8.15.0 or higher
+
+### Getting Started
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/omnitab.git
+cd omnitab
+
+# Install dependencies
+pnpm install
+
+# Start development server
+pnpm dev
+
+# Build for production
+pnpm build
+```
+
+### Loading the Extension
+
+1. Open Chrome and navigate to `chrome://extensions/`
+2. Enable "Developer mode"
+3. Click "Load unpacked"
+4. Select the `dist` folder from your project
+
+## 🏗️ Tech Stack
+
+- **Framework**: React 19 with TypeScript
+- **Build Tool**: Vite with CRXJS plugin
+- **Styling**: Tailwind CSS + DaisyUI
+- **Extension**: Chrome Extension Manifest V3
+
+## 📝 License
+
+MIT License - feel free to use this project for personal or commercial purposes.
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.

@@ -12,9 +12,18 @@ export default function createShadowRoot(styles: string) {
   // Attach a shadow root to the container element
   const shadow = container.attachShadow({ mode: 'open' });
 
+  // Fix font URLs to use extension URLs
+  const fixedStyles = styles.replace(
+    /url\(['"]?\.\.\/fonts\/([^'")]+)['"]?\)/g,
+    (_, fontFile) => {
+      const fontUrl = chrome.runtime.getURL(`assets/fonts/${fontFile}`);
+      return `url('${fontUrl}')`;
+    }
+  );
+
   // Create a new CSS style sheet and apply the specified styles
   const globalStyleSheet = new CSSStyleSheet();
-  globalStyleSheet.replaceSync(styles);
+  globalStyleSheet.replaceSync(fixedStyles);
 
   // Apply the style sheet to the shadow root
   shadow.adoptedStyleSheets = [globalStyleSheet];
