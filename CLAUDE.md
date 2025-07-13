@@ -18,6 +18,15 @@ pnpm build
 # Run ESLint
 pnpm lint
 
+# Run Jest tests
+pnpm test
+
+# Run tests with coverage
+pnpm test:coverage
+
+# Run tests in watch mode
+pnpm test:watch
+
 # Preview production build
 pnpm preview
 ```
@@ -29,8 +38,33 @@ pnpm preview
 - **Background Service Worker**: `src/background/index.ts` - Handles keyboard commands, tab search, switching, and closing operations
 - **Content Script**: `src/content/` - Injects the OmniTab search overlay into web pages
   - `Content.tsx` - Main container that manages overlay visibility
-  - `OmniTab.tsx` - The search interface component with keyboard navigation
+  - `OmniTab.tsx` - Refactored modular search interface component
 - **Manifest**: `src/manifest.ts` - Chrome extension manifest v3 with keyboard shortcut (Ctrl/Cmd+J) and tab permissions
+
+### Modular Architecture (Refactored)
+
+The main OmniTab component has been refactored into a clean, modular architecture:
+
+#### **Utility Functions**
+
+- `src/utils/faviconUtils.ts` - Favicon URL resolution and error handling
+- `src/utils/resultActions.ts` - Search result action handling with type-specific logic
+- `src/utils/keyboardUtils.ts` - Keyboard event utilities and Emacs navigation support
+- `src/utils/fuzzySearch.ts` - Intelligent fuzzy search with category-based scoring
+
+#### **Custom Hooks**
+
+- `src/hooks/useSearchResults.ts` - Search state management, loading, and debouncing
+- `src/hooks/useResultNavigation.ts` - Selection state and navigation logic
+- `src/hooks/useKeyboardNavigation.ts` - Keyboard event handling and action execution
+
+#### **Reusable Components**
+
+- `src/components/SearchInput.tsx` - Search input field with keyboard handling
+- `src/components/ResultItem.tsx` - Individual result item with favicon and actions
+- `src/components/ResultsList.tsx` - Container for all results with scrolling
+- `src/components/StatusBar.tsx` - Loading indicator and context-sensitive shortcuts
+- `src/components/EmptyState.tsx` - No results messaging with helpful hints
 
 ### Key Technologies & Configuration
 
@@ -39,7 +73,8 @@ pnpm preview
 - **TypeScript**: Strict mode enabled, path aliases configured (`@/*` → `src/*`)
 - **React**: v19.1.0 with React Refresh for development
 - **Styling**: Tailwind CSS + DaisyUI component library
-- **Linting**: ESLint with Airbnb config + TypeScript rules
+- **Testing**: Jest with ts-jest, @testing-library/react, jsdom environment
+- **Linting**: ESLint with Airbnb config + TypeScript rules + Jest plugin
 - **Formatting**: Prettier with import sorting and Tailwind class ordering
 - **Git Hooks**: Husky + lint-staged for pre-commit checks
 
@@ -55,9 +90,73 @@ pnpm preview
 - **Commit Convention**: Conventional commits enforced via commitlint
 - **Pre-commit**: Automatically runs ESLint fix and Prettier formatting on staged files
 - **Import Order**: Enforced by Prettier plugin with specific grouping (built-ins → React → types → third-party → local → styles)
+- **Testing**: Comprehensive unit tests with 93%+ coverage for fuzzy search algorithm
+- **Type Safety**: Strict TypeScript with no `any` types in production code
+
+### Navigation & Keyboard Shortcuts
+
+OmniTab supports multiple navigation methods for maximum accessibility:
+
+#### **Opening OmniTab**
+
+- `Ctrl+J` (Windows/Linux) or `Cmd+J` (Mac) - Global keyboard shortcut
+- Click extension icon in toolbar
+
+#### **Navigation**
+
+- `↑/↓` Arrow Keys - Navigate through results
+- `Ctrl+N` / `Ctrl+P` - Emacs-style navigation (next/previous)
+- `Tab` - Focus next element (standard behavior)
+
+#### **Actions**
+
+- `Enter` - Execute primary action:
+  - **Tabs**: Switch to tab
+  - **History/Bookmarks**: Open in new tab
+- `Ctrl+Enter` / `Cmd+Enter` - Secondary action:
+  - **Tabs**: Close tab
+  - **History/Bookmarks**: Same as Enter (open in new tab)
+- `Escape` - Close OmniTab
+
+#### **Search Features**
+
+- **Instant Search**: Results update as you type
+- **Category Filters**: Use prefixes like "tab", "history", "bookmark"
+- **Fuzzy Matching**: Intelligent scoring with substring and starts-with matching
+- **Category Priority**: Tabs ranked higher than history, history higher than bookmarks
+
+### Testing
+
+The project includes comprehensive testing with Jest:
+
+#### **Test Files**
+
+- `src/utils/__tests__/fuzzySearch.test.ts` - 30 tests covering fuzzy search algorithm
+- `src/content/__tests__/OmniTab.actions.test.tsx` - 18 tests covering action system and Emacs navigation
+
+#### **Test Coverage**
+
+- **Fuzzy Search**: 93.96% statement coverage, 85.91% branch coverage
+- **Total Tests**: 48 tests, all passing
+- **Test Environment**: jsdom with React Testing Library support
+
+#### **Running Tests**
+
+```bash
+# Run all tests
+pnpm test
+
+# Run with coverage report
+pnpm test:coverage
+
+# Run in watch mode during development
+pnpm test:watch
+```
 
 ### Important Notes
 
 - The CRXJS plugin requires a workaround for manifest generation (see `viteManifestHackIssue846` in vite.config.ts)
 - Content scripts are configured to inject CSS automatically
 - Web accessible resources include all JS/CSS files and public assets
+- The refactored architecture supports both the original monolithic component and the new modular structure
+- All components follow single responsibility principle for better maintainability and testing
