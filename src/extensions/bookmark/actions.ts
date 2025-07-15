@@ -105,7 +105,9 @@ export async function bookmarkCurrentPage(): Promise<ExtensionResponse> {
           resolve({
             success: true,
             data: {
-              message: BOOKMARK_MESSAGES.BOOKMARKED_PAGE(currentTab.title),
+              message: BOOKMARK_MESSAGES.BOOKMARKED_PAGE(
+                currentTab.title || 'Unknown'
+              ),
               bookmarkId: bookmark.id,
             },
           });
