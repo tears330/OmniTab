@@ -67,8 +67,10 @@ export default function ResultItem({
   return (
     <div
       ref={resultRef}
-      className={`group mx-3 mb-1 flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 transition-colors duration-150 ${
-        isSelected ? 'bg-white/10' : 'hover:bg-white/5'
+      className={`group mx-3 mb-1 flex cursor-pointer items-center gap-3 rounded-lg px-3 py-3 transition-colors duration-150 ${
+        isSelected
+          ? 'bg-gray-200/50 dark:bg-white/10'
+          : 'hover:bg-gray-100/50 dark:hover:bg-white/5'
       }`}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
@@ -77,16 +79,16 @@ export default function ResultItem({
     >
       {/* Icon */}
       <div className='flex-shrink-0'>
-        <div className='flex h-8 w-8 items-center justify-center rounded-md bg-gray-800/50 ring-1 ring-white/5'>
+        <div className='flex h-5 w-5 items-center justify-center overflow-hidden rounded-md'>
           {result.icon ? (
             <img
               src={result.icon}
               alt=''
-              className='h-4 w-4'
+              className='h-full w-full object-cover'
               onError={handleFaviconError}
             />
           ) : (
-            <div className='h-4 w-4 rounded bg-gray-600' />
+            <div className='h-full w-full rounded bg-gray-300 dark:bg-gray-600' />
           )}
         </div>
       </div>
@@ -94,11 +96,11 @@ export default function ResultItem({
       {/* Content */}
       <div className='min-w-0 flex-1'>
         <div className='flex items-center gap-2'>
-          <span className='truncate text-sm font-medium text-gray-100'>
+          <span className='truncate text-sm font-medium text-gray-900 dark:text-gray-100'>
             {result.title}
           </span>
           {result.description && (
-            <span className='min-w-0 flex-shrink-0 text-sm text-gray-500'>
+            <span className='min-w-0 flex-shrink-0 text-sm text-gray-500 dark:text-gray-500'>
               {result.description}
             </span>
           )}
@@ -107,7 +109,7 @@ export default function ResultItem({
 
       {/* Type */}
       <div className='flex-shrink-0'>
-        <span className='text-xs text-gray-500'>
+        <span className='text-xs text-gray-500 dark:text-gray-500'>
           {getTypeLabel(result.type)}
         </span>
       </div>

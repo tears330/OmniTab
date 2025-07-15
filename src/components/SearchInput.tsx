@@ -28,7 +28,7 @@ export default function SearchInput({
           onKeyDown(e);
         }}
         placeholder='Type to search or use shortcuts: t (tabs), h (history), b (bookmarks)'
-        className='w-full border-0 bg-transparent text-lg text-gray-100 placeholder-gray-500 focus:outline-none'
+        className='w-full border-0 bg-transparent text-lg text-gray-900 placeholder-gray-400 focus:outline-none dark:text-gray-100 dark:placeholder-gray-500'
         autoComplete='off'
         spellCheck={false}
       />
