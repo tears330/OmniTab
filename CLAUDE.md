@@ -202,6 +202,115 @@ pnpm test:coverage
 pnpm test:watch
 ```
 
+## Release Workflow
+
+This project follows a standardized release process using semantic versioning and GitHub Actions for automated releases.
+
+### Release Process
+
+#### 1. Version Bump Branch
+
+Create a new branch for the version bump:
+
+```bash
+git checkout main
+git pull origin main
+git checkout -b release/v<NEW_VERSION>
+```
+
+#### 2. Update Version
+
+Update the version in `package.json`:
+
+```bash
+# For patch release (0.3.0 → 0.3.1)
+pnpm version patch
+
+# For minor release (0.3.0 → 0.4.0)
+pnpm version minor
+
+# For major release (0.3.0 → 1.0.0)
+pnpm version major
+```
+
+This command will:
+
+- Update the version in `package.json`
+- Update the version in `src/manifest.ts` (extension version)
+- Create a git commit with the version bump
+
+#### 3. Create Release PR
+
+Push the branch and create a pull request:
+
+```bash
+git push -u origin release/v<NEW_VERSION>
+gh pr create --title "Release v<NEW_VERSION>" --body "Bump version to <NEW_VERSION>"
+```
+
+#### 4. Merge PR
+
+After review and approval, merge the PR to main:
+
+```bash
+gh pr merge --merge  # Use merge commit for release PRs
+```
+
+#### 5. Create Release Tag
+
+Create and push the release tag to trigger the GitHub Actions release workflow:
+
+```bash
+git checkout main
+git pull origin main
+git tag v<NEW_VERSION>
+git push origin v<NEW_VERSION>
+```
+
+### Automated Release Workflow
+
+The release is automatically handled by GitHub Actions when a tag is pushed:
+
+1. **Build**: Compiles the extension for production
+2. **Test**: Runs all tests to ensure quality
+3. **Package**: Creates the extension `.zip` file
+4. **Release**: Creates a GitHub release with the packaged extension
+5. **Publish**: Optionally publishes to Chrome Web Store (if configured)
+
+### Version Numbering
+
+Follow semantic versioning (SemVer):
+
+- **PATCH** (`0.3.0` → `0.3.1`): Bug fixes and minor improvements
+- **MINOR** (`0.3.0` → `0.4.0`): New features that don't break existing functionality
+- **MAJOR** (`0.3.0` → `1.0.0`): Breaking changes or major feature overhauls
+
+### Release Notes
+
+When creating the release tag, the GitHub Actions workflow will automatically:
+
+- Generate release notes from commit messages
+- Include the built extension package
+- Tag the release appropriately
+
+### Manual Release Commands
+
+If you need to perform these steps manually:
+
+```bash
+# Check current version
+pnpm version --json
+
+# Build for production
+pnpm build
+
+# Run tests before release
+pnpm test
+
+# Check linting
+pnpm lint
+```
+
 ### Important Notes
 
 - The CRXJS plugin requires a workaround for manifest generation (see `viteManifestHackIssue846` in vite.config.ts)
