@@ -5,6 +5,8 @@ import { create } from 'zustand';
 import { getContentBroker } from '@/services/messageBroker';
 import { performSearch as performSearchService } from '@/services/searchService';
 
+import { TAB_EXTENSION_ID, TabCommandId } from '../extensions';
+
 interface OmniTabStore extends OmniTabState {
   // Actions
   open: () => void;
@@ -89,7 +91,7 @@ export const useOmniTabStore = create<OmniTabStore>()((set, get) => ({
   setQuery: (query: string) => set({ query, selectedIndex: 0 }),
 
   setResults: (results: SearchResult[]) =>
-    set({ results, selectedIndex: 0, loading: false }),
+    set({ results, selectedIndex: 0, loading: false, error: undefined }),
 
   setLoading: (loading: boolean) => set({ loading }),
 
@@ -110,7 +112,7 @@ export const useOmniTabStore = create<OmniTabStore>()((set, get) => ({
   setCommands: (commands: Command[]) => set({ availableCommands: commands }),
 
   setInitialResults: (results: SearchResult[]) =>
-    set({ results, loading: false }),
+    set({ results, loading: false, error: undefined }),
 
   reset: () => set(initialState),
 
@@ -138,11 +140,15 @@ export const useOmniTabStore = create<OmniTabStore>()((set, get) => ({
   loadInitialResults: async () => {
     try {
       const broker = getContentBroker();
-      const response = await broker.sendSearchRequest('tab', 'search', '');
+      const response = await broker.sendSearchRequest(
+        TAB_EXTENSION_ID,
+        TabCommandId.SEARCH,
+        ''
+      );
 
       if (response.success && response.data) {
         const { data } = response;
-        set({ results: data, loading: false });
+        set({ results: data, loading: false, error: undefined });
       }
     } catch (error) {
       set({ loading: false });
@@ -171,7 +177,12 @@ export const useOmniTabStore = create<OmniTabStore>()((set, get) => ({
         broker,
       });
 
-      set({ results: searchResult.results, selectedIndex: 0, loading: false });
+      set({
+        results: searchResult.results,
+        selectedIndex: 0,
+        loading: false,
+        error: searchResult.error, // This will be undefined if no error, clearing previous errors
+      });
 
       if (searchResult.activeExtension && searchResult.activeCommand) {
         set({
@@ -180,10 +191,6 @@ export const useOmniTabStore = create<OmniTabStore>()((set, get) => ({
         });
       } else {
         set({ activeExtension: undefined, activeCommand: undefined });
-      }
-
-      if (searchResult.error) {
-        set({ error: searchResult.error });
       }
     } catch (error) {
       set({
