@@ -100,7 +100,7 @@ function OmniTab({ isOpen, onClose }: OmniTabProps) {
   return (
     <div
       data-omnitab
-      className='fixed inset-0 z-[999999] flex items-start justify-center bg-black/20 backdrop-blur-md'
+      className='fixed inset-0 z-[999999] flex items-start justify-center bg-black/30 backdrop-blur-md dark:bg-black/50'
       onClick={onClose}
       onKeyDown={(e) => {
         e.stopPropagation();
@@ -116,7 +116,7 @@ function OmniTab({ isOpen, onClose }: OmniTabProps) {
         }}
         role='presentation'
       >
-        <div className='overflow-hidden rounded-xl bg-gray-900/95 shadow-2xl ring-1 ring-white/10 backdrop-blur-xl'>
+        <div className='overflow-hidden rounded-xl bg-white/95 shadow-2xl ring-1 ring-gray-300/50 backdrop-blur-xl dark:bg-gray-900/95 dark:ring-white/10'>
           <SearchInput
             inputRef={inputRef}
             value={store.query}

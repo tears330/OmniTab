@@ -51,11 +51,13 @@ export default function StatusBar({
   };
 
   return (
-    <div className='mt-2 flex items-center justify-between px-3 py-2 text-xs text-gray-500'>
+    <div className='mt-2 flex items-center justify-between px-3 py-2 text-xs text-gray-500 dark:text-gray-500'>
       <div className='flex items-center gap-2'>
         {(() => {
           if (error) {
-            return <span className='text-red-400'>{error}</span>;
+            return (
+              <span className='text-red-600 dark:text-red-400'>{error}</span>
+            );
           }
           if (loading) {
             return (
@@ -91,15 +93,19 @@ export default function StatusBar({
           >
             {keys.map((key, keyIndex) => (
               <span key={`key-${key}`}>
-                <kbd className='rounded bg-gray-800 px-1.5 py-0.5 font-mono text-[10px] text-gray-400'>
+                <kbd className='rounded bg-gray-200 px-1.5 py-0.5 font-mono text-[10px] text-gray-600 dark:bg-gray-800 dark:text-gray-400'>
                   {key}
                 </kbd>
                 {keyIndex < keys.length - 1 && (
-                  <span className='mx-0.5 text-gray-600'>/</span>
+                  <span className='mx-0.5 text-gray-500 dark:text-gray-500'>
+                    /
+                  </span>
                 )}
               </span>
             ))}
-            <span className='ml-1 text-gray-600'>{label}</span>
+            <span className='ml-1 text-gray-500 dark:text-gray-500'>
+              {label}
+            </span>
           </span>
         ))}
       </div>

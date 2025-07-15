@@ -33,7 +33,7 @@ export function getHostnameFromUrl(url: string): string {
 /**
  * Gets a favicon URL using Chrome's _favicon API for optimal performance and reliability
  * @param pageUrl - The URL of the page to get favicon for
- * @param size - Favicon size (default: 16)
+ * @param size - Favicon size (default: 32)
  * @returns Chrome extension favicon URL
  */
 export function getFaviconUrl(pageUrl: string, size: number = 32): string {

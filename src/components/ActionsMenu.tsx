@@ -73,12 +73,12 @@ export default function ActionsMenu({
     >
       <div className='absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2'>
         <div
-          className='min-w-[200px] rounded-lg bg-gray-800 shadow-2xl ring-1 ring-white/10'
+          className='min-w-[200px] rounded-lg bg-white/95 shadow-2xl ring-1 ring-gray-300/50 dark:bg-gray-900/95 dark:ring-white/10'
           onClick={(e) => e.stopPropagation()}
           role='presentation'
         >
           <div className='p-2'>
-            <div className='mb-2 px-2 py-1 text-xs font-medium text-gray-400'>
+            <div className='mb-2 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400'>
               Actions for {selectedResult.title}
             </div>
             {secondaryActions.map((action) => (
@@ -86,11 +86,11 @@ export default function ActionsMenu({
                 key={action.id}
                 type='button'
                 onClick={() => handleActionClick(action)}
-                className='flex w-full items-center justify-between rounded px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white'
+                className='flex w-full items-center justify-between rounded px-3 py-2 text-sm text-gray-700 hover:bg-gray-300 dark:text-gray-300 dark:hover:bg-gray-700'
               >
                 <span>{action.label}</span>
                 {action.shortcut && (
-                  <kbd className='ml-2 rounded bg-gray-900 px-1.5 py-0.5 text-[10px] text-gray-500'>
+                  <kbd className='ml-2 rounded bg-gray-200 px-1.5 py-0.5 text-[10px] text-gray-600 dark:bg-gray-800 dark:text-gray-400'>
                     {action.shortcut}
                   </kbd>
                 )}
