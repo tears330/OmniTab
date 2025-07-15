@@ -10,12 +10,55 @@ OmniTab is a keyboard-first tab manager Chrome extension that provides a Spotlig
 
 OmniTab now uses a modular extension-based architecture where functionality is organized into pluggable extensions:
 
+### Standard Extension Structure
+
+Extensions follow a standardized modular structure for better maintainability and consistency:
+
+```
+src/extensions/
+├── index.ts (main entry point)
+├── core/ (system commands)
+│   ├── extension.ts (main extension class)
+│   ├── constants.ts (enums and constants)
+│   ├── actions.ts (action functions)
+│   ├── search.ts (search utilities)
+│   └── index.ts (module exports)
+├── tab/ (tab management)
+├── history/ (browser history)
+└── bookmark/ (bookmark search)
+```
+
 ### Core Extensions
 
-- **CoreExtension** (`src/extensions/CoreExtension.ts`) - System commands (help, reload)
+- **CoreExtension** (`src/extensions/core/`) - System commands (help, reload) with modular structure
 - **TabExtension** (`src/extensions/TabExtension.ts`) - Tab search, switch, close, duplicate management
 - **HistoryExtension** (`src/extensions/HistoryExtension.ts`) - Browser history search
 - **BookmarkExtension** (`src/extensions/BookmarkExtension.ts`) - Bookmark search
+
+### Extension Development Guidelines
+
+When creating new extensions, follow this modular pattern:
+
+#### **Required Files:**
+
+1. **`extension.ts`** - Main extension class extending `BaseExtension`
+2. **`constants.ts`** - All enums, constants, and hardcoded values
+3. **`actions.ts`** - Individual exported action functions (not classes)
+4. **`index.ts`** - Module entry point exporting all public APIs
+
+#### **Optional Files:**
+
+- **`search.ts`** - Search-related utility functions if the extension provides search
+- **`utils.ts`** - Extension-specific utility functions
+- **`types.ts`** - Extension-specific TypeScript types
+
+#### **Best Practices:**
+
+- Use **enums and constants** instead of hardcoded strings
+- Export **individual functions** instead of static class methods for actions
+- Keep **command definitions inline** within the main extension class
+- Use **descriptive constant names** following the pattern `EXTENSION_NAME_*`
+- Import/export through the **`index.ts` entry point** for clean module boundaries
 
 ### Architecture Components
 
@@ -64,11 +107,11 @@ The main OmniTab component has been refactored into a clean, modular architectur
 
 #### **Utility Functions**
 
-- `src/utils/faviconUtils.ts` - Favicon URL resolution and error handling
-- `src/utils/resultActions.ts` - Search result action handling with type-specific logic
+- `src/utils/searchUtils.ts` - **Core search utilities** including command parsing, result creation, and safe search operations
+- `src/utils/urlUtils.ts` - URL-related utility functions including domain extraction and favicon resolution
 - `src/utils/keyboardUtils.ts` - Keyboard event utilities and Emacs navigation support
-- `src/utils/fuzzySearch.ts` - Intelligent fuzzy search with category-based scoring
-- `src/utils/urlUtils.ts` - URL-related utility functions including domain extraction from URL
+- `src/utils/resultActions.ts` - Search result action handling with type-specific logic
+- `src/utils/createShadowRoot.tsx` - Shadow DOM creation utility for style isolation
 
 #### **Custom Hooks**
 
@@ -127,6 +170,15 @@ The main OmniTab component has been refactored into a clean, modular architectur
 - **Avoid Lodash**: es-toolkit provides modern, tree-shakeable alternatives to lodash functions
 - **Native Methods**: Use native JavaScript methods when they're sufficient (e.g., `Array.prototype.map`, `filter`, `reduce`)
 
+#### **Search Utilities Organization**
+
+- **Consolidated Module**: All search-related utilities are centralized in `src/utils/searchUtils.ts`
+- **Function Exports**: Use individual function exports instead of class-based utilities for better tree-shaking
+- **Type Safety**: Import types from `@/types` for consistent type definitions
+- **Error Handling**: Use `safeSearchRequest()` for robust error handling in search operations
+- **Command Parsing**: Use `parseCommand()` for consistent query parsing across the application
+- **Result Creation**: Use standardized result creators (`createSuccessResult`, `createErrorResult`, `createEmptyResult`) for consistent response shapes
+
 ### ESLint Configuration
 
 The project uses a comprehensive ESLint setup (`/.eslintrc.cjs`) with:
@@ -148,7 +200,7 @@ OmniTab supports multiple navigation methods for maximum accessibility:
 
 #### **Opening OmniTab**
 
-- `Ctrl+J` (Windows/Linux) or `Cmd+J` (Mac) - Global keyboard shortcut
+- `Ctrl+Shift+K` (Windows/Linux) or `Cmd+Shift+K` (Mac) - Global keyboard shortcut
 - Click extension icon in toolbar
 
 #### **Navigation**
@@ -180,13 +232,15 @@ The project includes comprehensive testing with Jest:
 
 #### **Test Files**
 
-- `src/utils/__tests__/fuzzySearch.test.ts` - 30 tests covering fuzzy search algorithm
+- `src/utils/__tests__/searchUtils.test.ts` - 21 tests covering search utilities (command parsing, result creation, safe operations)
+- `src/services/__tests__/searchService.test.ts` - 10 tests covering search service integration
 - `src/content/__tests__/OmniTab.actions.test.tsx` - 18 tests covering action system and Emacs navigation
 
 #### **Test Coverage**
 
-- **Fuzzy Search**: 93.96% statement coverage, 85.91% branch coverage
-- **Total Tests**: 48 tests, all passing
+- **Search Utilities**: 100% coverage for all search-related functions including command parsing and result creation
+- **Search Service**: Comprehensive integration testing with mocked dependencies
+- **Total Tests**: 49+ tests, all passing
 - **Test Environment**: jsdom with React Testing Library support
 
 #### **Running Tests**
@@ -316,8 +370,11 @@ pnpm lint
 - The CRXJS plugin requires a workaround for manifest generation (see `viteManifestHackIssue846` in vite.config.ts)
 - Content scripts are configured to inject CSS automatically
 - Web accessible resources include all JS/CSS files and public assets
-- The refactored architecture supports both the original monolithic component and the new modular structure
+- **Extension Architecture**: All new extensions should follow the modular structure defined in `src/extensions/core/` as the standard template
+- **Entry Point**: Always use `src/extensions/index.ts` as the main entry point for importing extension functionality
+- **Module Structure**: Extensions with complex logic should be organized into separate modules (constants, actions, search, etc.)
 - All components follow single responsibility principle for better maintainability and testing
 - Extension-based architecture allows for easy addition of new search providers
 - Each extension can provide multiple commands (search or action types)
 - Command aliases enable quick access (e.g., 't' for tabs, 'h' for history, 'b' for bookmarks)
+- **Constants First**: Replace all hardcoded values with enums and constants defined in a dedicated constants file

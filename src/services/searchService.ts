@@ -1,73 +1,23 @@
 import type { Command, SearchResult } from '@/types/extension';
+import type {
+  SearchBroker,
+  SearchOptions,
+  SearchResults,
+} from '@/types/search';
+import { groupBy, uniqBy } from 'es-toolkit';
 
-import { parseCommand } from '@/utils/commandUtils';
+import {
+  createEmptyResult,
+  createErrorResult,
+  createSuccessResult,
+  findCommandByAlias,
+  parseCommand,
+  parseCommandId,
+  safeSearchRequest,
+} from '@/utils/searchUtils';
 
-// Define minimal broker interface needed for search
-export interface SearchBroker {
-  sendSearchRequest(
-    extensionId: string,
-    commandId: string,
-    query: string
-  ): Promise<{
-    success: boolean;
-    data?: SearchResult[];
-    error?: string;
-  }>;
-}
-
-export interface SearchOptions {
-  query: string;
-  availableCommands: Command[];
-  broker: SearchBroker;
-}
-
-export interface SearchResults {
-  results: SearchResult[];
-  loading: boolean;
-  error?: string;
-  activeExtension?: string;
-  activeCommand?: string;
-}
-
-/**
- * Converts a command to a search result
- */
-export function commandToSearchResult(cmd: Command): SearchResult {
-  return {
-    id: cmd.id,
-    title: cmd.name,
-    description: cmd.description || '',
-    icon: cmd.icon,
-    type: 'command',
-    actions: [
-      {
-        id: 'select',
-        label: 'Select',
-        shortcut: 'Enter',
-        primary: true,
-      },
-    ],
-    metadata: { command: cmd },
-  };
-}
-
-/**
- * Searches for commands that match the query
- */
-export function searchCommands(
-  query: string,
-  commands: Command[]
-): SearchResult[] {
-  const lowerQuery = query.toLowerCase();
-  const matchingCommands = commands.filter(
-    (cmd) =>
-      cmd.name.toLowerCase().includes(lowerQuery) ||
-      cmd.description?.toLowerCase().includes(lowerQuery) ||
-      cmd.alias?.some((a) => a.includes(lowerQuery))
-  );
-
-  return matchingCommands.map(commandToSearchResult);
-}
+// Re-export types for backward compatibility
+export type { SearchBroker, SearchOptions, SearchResults };
 
 /**
  * Performs a search across all available extensions
@@ -77,34 +27,27 @@ export async function searchAllExtensions(
   commands: Command[],
   broker: SearchBroker
 ): Promise<SearchResult[]> {
-  const allResults: SearchResult[] = [];
-
-  // First, add matching commands
-  allResults.push(...searchCommands(query, commands));
-
-  // Then search across all search extensions
-  const extensionIds = new Set(
-    commands
-      .filter((cmd) => cmd.type === 'search')
-      .map((cmd) => cmd.id.split('.')[0])
+  // Filter search commands and group by extension
+  const searchCommands = commands.filter((cmd) => cmd.type === 'search');
+  const commandsByExtension = groupBy(
+    searchCommands,
+    (cmd) => parseCommandId(cmd.id).extensionId
   );
 
-  const searchPromises = Array.from(extensionIds).map(async (extId) => {
-    try {
-      const response = await broker.sendSearchRequest(extId, 'search', query);
-      if (response.success && response.data) {
-        return response.data;
-      }
-    } catch {
-      // Ignore individual extension failures
-    }
-    return [];
-  });
+  // Create search promises for each extension's search commands
+  const searchPromises = Object.entries(commandsByExtension).flatMap(
+    ([extensionId, extensionCommands]) =>
+      extensionCommands.map(async (command) => {
+        const { commandId } = parseCommandId(command.id);
+        return safeSearchRequest(broker, extensionId, commandId, query);
+      })
+  );
 
   const results = await Promise.all(searchPromises);
-  allResults.push(...results.flat());
+  const flatResults = results.flat();
 
-  return allResults;
+  // Remove duplicate results by ID using es-toolkit
+  return uniqBy(flatResults, (result) => result.id);
 }
 
 /**
@@ -137,64 +80,39 @@ export async function performSearch(
 
   // Empty query - return empty results (caller should handle default state)
   if (!query.trim()) {
-    return {
-      results: [],
-      loading: false,
-    };
+    return createEmptyResult();
   }
 
   // Parse command from query
   const { alias, searchTerm } = parseCommand(query);
 
-  // Find matching command by alias
-  let extensionId: string | undefined;
-  let commandId: string | undefined;
-
-  if (alias) {
-    // Look for command with matching alias
-    const command = availableCommands.find((cmd) =>
-      cmd.alias?.includes(alias.toLowerCase())
-    );
-
-    if (command) {
-      const [extId, cmdId] = command.id.split('.');
-      extensionId = extId;
-      commandId = cmdId;
-    }
-  }
-
   try {
-    // If a specific command found via alias, search only that extension
-    if (extensionId && commandId) {
-      const results = await searchExtension(
-        extensionId,
-        commandId,
-        searchTerm,
-        broker
-      );
-      return {
-        results,
-        loading: false,
-        activeExtension: extensionId,
-        activeCommand: commandId,
-      };
+    // Check if alias matches a specific command
+    if (alias) {
+      const command = findCommandByAlias(alias, availableCommands);
+
+      if (command) {
+        const { extensionId, commandId } = parseCommandId(command.id);
+        const results = await searchExtension(
+          extensionId,
+          commandId,
+          searchTerm,
+          broker
+        );
+        return createSuccessResult(results, extensionId, commandId);
+      }
     }
 
-    // Otherwise, search commands and all extensions
+    // No specific command found, search all extensions
     const results = await searchAllExtensions(
       searchTerm || query,
       availableCommands,
       broker
     );
-    return {
-      results,
-      loading: false,
-    };
+    return createSuccessResult(results);
   } catch (error) {
-    return {
-      results: [],
-      loading: false,
-      error: error instanceof Error ? error.message : 'Search failed',
-    };
+    const errorMessage =
+      error instanceof Error ? error.message : 'Search failed';
+    return createErrorResult(errorMessage);
   }
 }

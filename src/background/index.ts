@@ -1,8 +1,11 @@
-import BookmarkExtension from '@/extensions/BookmarkExtension';
-import CoreExtension from '@/extensions/CoreExtension';
-import HistoryExtension from '@/extensions/HistoryExtension';
-import TabExtension from '@/extensions/TabExtension';
 import { ExtensionRegistry } from '@/services/extensionRegistry';
+
+import {
+  BookmarkExtension,
+  CoreExtension,
+  HistoryExtension,
+  TabExtension,
+} from '../extensions';
 
 // Initialize extension registry
 const registry = ExtensionRegistry.getInstance();

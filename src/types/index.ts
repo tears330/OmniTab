@@ -75,3 +75,6 @@ export type BackgroundMessage =
 export type ContentMessage = ToggleOmniTabMessage;
 
 export type MessageResponse = SearchTabsResponse | SuccessResponse;
+
+// Re-export search types
+export * from './search';

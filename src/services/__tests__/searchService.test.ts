@@ -1,11 +1,9 @@
+import type { SearchBroker } from '@/types';
 import type { Command, SearchResult } from '@/types/extension';
-import type { SearchBroker } from '../searchService';
 
 import {
-  commandToSearchResult,
   performSearch,
   searchAllExtensions,
-  searchCommands,
   searchExtension,
 } from '../searchService';
 
@@ -47,60 +45,6 @@ describe('searchService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-  });
-
-  describe('commandToSearchResult', () => {
-    it('should convert a command to a search result', () => {
-      const command = mockCommands[0];
-      const result = commandToSearchResult(command);
-
-      expect(result).toEqual({
-        id: 'tab.search',
-        title: 'Search Tabs',
-        description: 'Search through open browser tabs',
-        icon: undefined,
-        type: 'command',
-        actions: [
-          {
-            id: 'select',
-            label: 'Select',
-            shortcut: 'Enter',
-            primary: true,
-          },
-        ],
-        metadata: { command },
-      });
-    });
-  });
-
-  describe('searchCommands', () => {
-    it('should find commands by name', () => {
-      const results = searchCommands('tabs', mockCommands);
-      expect(results).toHaveLength(2);
-      expect(results[0].title).toBe('Search Tabs');
-      expect(results[1].title).toBe('Close Duplicate Tabs');
-    });
-
-    it('should find commands by description', () => {
-      const results = searchCommands('browser', mockCommands);
-      expect(results).toHaveLength(3);
-    });
-
-    it('should find commands by alias', () => {
-      const results = searchCommands('dup', mockCommands);
-      expect(results).toHaveLength(1);
-      expect(results[0].title).toBe('Close Duplicate Tabs');
-    });
-
-    it('should be case insensitive', () => {
-      const results = searchCommands('TABS', mockCommands);
-      expect(results).toHaveLength(2);
-    });
-
-    it('should return empty array for no matches', () => {
-      const results = searchCommands('xyz', mockCommands);
-      expect(results).toHaveLength(0);
-    });
   });
 
   describe('searchAllExtensions', () => {

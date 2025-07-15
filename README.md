@@ -9,7 +9,7 @@ OmniTab is a powerful keyboard-first tab manager that brings a Spotlight-like ex
 - **Tabs**: Search through all your open tabs by title or URL
 - **History**: Browse your browsing history with intelligent filtering
 - **Bookmarks**: Find bookmarks across all folders and organize them
-- **Commands**: Access powerful tab management commands like duplicate removal and grouping
+- **Commands**: Access powerful system commands and search available commands
 
 ### ⌨️ **Keyboard-First Experience**
 
@@ -18,7 +18,7 @@ OmniTab is a powerful keyboard-first tab manager that brings a Spotlight-like ex
   - `Enter` to switch to tab/open link
   - `Ctrl/Cmd + Enter` for secondary actions (close tab, etc.)
   - `Cmd/Ctrl + K` to open actions menu
-- **Command Aliases**: Use shortcuts like `t` (tabs), `h` (history), `b` (bookmarks)
+- **Command Aliases**: Use shortcuts like `t` (tabs), `h` (history), `b` (bookmarks), `>` (commands)
 
 ### 🎨 **Modern Interface**
 
@@ -41,6 +41,7 @@ OmniTab is a powerful keyboard-first tab manager that brings a Spotlight-like ex
    - `t google` - Search only tabs containing "google"
    - `h reddit` - Search only history for "reddit"
    - `b docs` - Search only bookmarks for "docs"
+   - `> help` - Search available commands
 4. Navigate with arrow keys or `Ctrl+N`/`Ctrl+P`
 5. Press `Enter` to execute primary action or `Cmd+K` for more options
 6. Press `Escape` to close OmniTab
@@ -90,35 +91,56 @@ pnpm lint
 - **Framework**: React 19 with TypeScript (strict mode)
 - **Build Tool**: Vite with CRXJS plugin for Chrome extension bundling
 - **Styling**: Tailwind CSS + DaisyUI component library
-- **Extension**: Chrome Extension Manifest V3 with extension-based architecture
-- **Testing**: Jest with ts-jest, React Testing Library, 88+ comprehensive tests
+- **State Management**: Zustand store with es-toolkit optimizations
+- **Extension**: Chrome Extension Manifest V3 with modular extension architecture
+- **Testing**: Jest with ts-jest, React Testing Library, 49+ comprehensive tests
 - **Code Quality**: ESLint (Airbnb config), Prettier, Husky git hooks
 - **Package Manager**: pnpm with workspace configuration
 
 ## 🏛️ Architecture
 
-OmniTab uses a modern **extension-based architecture** where functionality is organized into pluggable modules:
+OmniTab uses a modern **modular extension architecture** where functionality is organized into standardized, pluggable modules:
+
+### Modular Extension Structure
+
+Extensions follow a standardized structure for maintainability:
+
+```
+src/extensions/
+├── index.ts (main entry point)
+├── core/ (system commands)
+│   ├── extension.ts (main extension class)
+│   ├── constants.ts (enums and constants)
+│   ├── actions.ts (action functions)
+│   ├── search.ts (search utilities)
+│   └── index.ts (module exports)
+├── tab/ (tab management)
+├── history/ (browser history)
+└── bookmark/ (bookmark search)
+```
 
 ### Core Extensions
 
-- **TabExtension**: Tab search, switching, closing, and management commands
+- **CoreExtension**: System commands (help, reload, command search)
+- **TabExtension**: Tab search, switching, closing, and management
 - **HistoryExtension**: Browser history search and navigation
 - **BookmarkExtension**: Bookmark search across folders
-- **CoreExtension**: System commands (help, settings, etc.)
 
 ### Key Components
 
 - **Extension Registry**: Manages extension lifecycle and command routing
 - **Message Broker**: Handles secure communication between content and background scripts
-- **Search Service**: Intelligent search with fuzzy matching and command parsing
-- **React Context**: State management with reducer pattern
+- **Search Service**: Intelligent search with command parsing and es-toolkit optimizations
+- **Zustand Store**: Global state management with debounced search
+- **Search Utilities**: Consolidated utilities for command parsing and result handling
 
 ### Developer Experience
 
 - **Hot Module Replacement**: Instant updates during development
 - **Shadow DOM Isolation**: CSS isolation prevents style conflicts
-- **Comprehensive Testing**: Unit tests for all services and utilities
+- **Comprehensive Testing**: 49+ unit tests covering all services and utilities
 - **Type Safety**: Full TypeScript coverage with strict mode
+- **Modular Architecture**: Consistent extension structure with constants-first approach
 
 ## 📝 License
 
