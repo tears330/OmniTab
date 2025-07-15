@@ -21,7 +21,7 @@ OmniTab now uses a modular extension-based architecture where functionality is o
 
 - **Extension Registry** (`src/services/extensionRegistry.ts`) - Manages extension lifecycle and command routing
 - **Message Broker** (`src/services/messageBroker.ts`) - Handles communication between content and background scripts
-- **OmniTab Context** (`src/contexts/OmniTabContext.tsx`) - React context for state management and extension interaction
+- **OmniTab Store** (`src/stores/omniTabStore.ts`) - Zustand store for global state management with debounced search and automatic initialization
 
 ## Key Commands
 
@@ -75,6 +75,7 @@ The main OmniTab component has been refactored into a clean, modular architectur
 - `src/hooks/useSearchResults.ts` - Search state management, loading, and debouncing
 - `src/hooks/useResultNavigation.ts` - Selection state and navigation logic
 - `src/hooks/useKeyboardNavigation.ts` - Keyboard event handling and action execution
+- **Zustand Store Integration**: Components use `useOmniTabStore` directly for optimal performance and automatic reactivity
 
 #### **Reusable Components**
 
@@ -90,6 +91,8 @@ The main OmniTab component has been refactored into a clean, modular architectur
 - **Build Tool**: Vite with CRXJS plugin for Chrome extension bundling
 - **TypeScript**: Strict mode enabled, path aliases configured (`@/*` → `src/*`)
 - **React**: v19.1.0 with React Refresh for development
+- **State Management**: Zustand for global state management with TypeScript support
+- **Utility Library**: es-toolkit for optimized utility functions (debounce, clamp, etc.)
 - **Styling**: Tailwind CSS + DaisyUI component library
 - **Testing**: Jest with ts-jest, @testing-library/react, jsdom environment
 - **Linting**: ESLint with Airbnb config + TypeScript rules + Jest plugin
@@ -111,6 +114,18 @@ The main OmniTab component has been refactored into a clean, modular architectur
 - **Import Order**: Enforced by Prettier plugin with specific grouping (built-ins → React → types → third-party → local → styles)
 - **Testing**: Comprehensive unit tests with 93%+ coverage for fuzzy search algorithm
 - **Type Safety**: Strict TypeScript with no `any` types in production code
+
+### Utility Functions Best Practices
+
+- **Use es-toolkit**: Prefer es-toolkit utility functions over custom implementations for better performance and smaller bundle size
+  - `debounce` for delaying function execution (e.g., search input)
+  - `clamp` for constraining values within bounds (e.g., array indices)
+  - `memoize` for caching expensive function results (e.g., search operations)
+  - `throttle` for rate-limiting function calls
+  - `uniq`, `uniqBy` for array deduplication
+  - `groupBy`, `keyBy` for object transformations
+- **Avoid Lodash**: es-toolkit provides modern, tree-shakeable alternatives to lodash functions
+- **Native Methods**: Use native JavaScript methods when they're sufficient (e.g., `Array.prototype.map`, `filter`, `reduce`)
 
 ### ESLint Configuration
 

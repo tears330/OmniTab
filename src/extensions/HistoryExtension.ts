@@ -138,8 +138,8 @@ class HistoryExtension extends BaseExtension {
     return {
       id: `history-${item.id}`,
       title: item.title || 'Untitled',
-      description: getDomain(item.url || ''),
-      icon: getFaviconUrl(item.url || '', chrome.runtime.getURL('icon16.png')),
+      description: getDomain(item.url ?? ''),
+      icon: getFaviconUrl(item.url ?? ''),
       type: 'history',
       actions: [
         {

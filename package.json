@@ -17,8 +17,11 @@
     "prepare": "husky install"
   },
   "dependencies": {
+    "es-toolkit": "^1.39.7",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "react-use": "^17.6.0",
+    "zustand": "^5.0.6"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.2.1",

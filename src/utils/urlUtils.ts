@@ -20,18 +20,27 @@ export function getDomain(url: string): string {
 }
 
 /**
- * Gets a favicon URL for a given URL
- * @param url - The URL to get favicon for
- * @param fallback - Fallback icon URL if favicon cannot be determined
- * @returns The favicon URL
+ * Extracts hostname from URL safely
  */
-export function getFaviconUrl(url: string, fallback?: string): string {
-  if (!url) return fallback || '';
-
+export function getHostnameFromUrl(url: string): string {
   try {
-    const { origin } = new URL(url);
-    return `${origin}/favicon.ico`;
+    return new URL(url).hostname;
   } catch {
-    return fallback || '';
+    return url;
   }
+}
+
+/**
+ * Gets a favicon URL using Chrome's _favicon API for optimal performance and reliability
+ * @param pageUrl - The URL of the page to get favicon for
+ * @param size - Favicon size (default: 16)
+ * @returns Chrome extension favicon URL
+ */
+export function getFaviconUrl(pageUrl: string, size: number = 16): string {
+  if (!pageUrl) return chrome.runtime.getURL('icon16.png');
+
+  const url = new URL(chrome.runtime.getURL('/_favicon/'));
+  url.searchParams.set('pageUrl', pageUrl);
+  url.searchParams.set('size', size.toString());
+  return url.toString();
 }

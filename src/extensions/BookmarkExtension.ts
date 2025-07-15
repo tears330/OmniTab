@@ -163,10 +163,7 @@ class BookmarkExtension extends BaseExtension {
       id: `bookmark-${bookmark.id}`,
       title: bookmark.title || 'Untitled',
       description: getDomain(bookmark.url ?? ''),
-      icon: getFaviconUrl(
-        bookmark.url || '',
-        chrome.runtime.getURL('icon16.png')
-      ),
+      icon: getFaviconUrl(bookmark.url || '', 16),
       type: 'bookmark',
       actions: [
         {
