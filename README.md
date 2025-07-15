@@ -1,6 +1,10 @@
 # 🚀 OmniTab - Spotlight for Your Browser
 
 <p align="center">
+  <img src="./public/icon128.png" alt="OmniTab Logo" width="128" height="128">
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/Chrome-Extension-4285F4?style=for-the-badge&logo=google-chrome&logoColor=white" alt="Chrome Extension">
   <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React 19">
   <img src="https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript">
@@ -28,21 +32,6 @@
 ---
 
 ## 📸 Screenshots
-
-<div align="center">
-  <img src="./docs/screenshots/search-interface.png" alt="Search Interface" width="600">
-  <p><em>Clean, distraction-free search interface with instant results</em></p>
-</div>
-
-<div align="center">
-  <img src="./docs/screenshots/tab-search.png" alt="Tab Search" width="600">
-  <p><em>Search through all your open tabs with fuzzy matching</em></p>
-</div>
-
-<div align="center">
-  <img src="./docs/screenshots/command-palette.png" alt="Command Palette" width="600">
-  <p><em>Access powerful commands with symbol prefixes</em></p>
-</div>
 
 > **Note**: Screenshots coming soon! The extension is currently in active development.
 
@@ -184,6 +173,7 @@ src/extensions/
 ```
 
 ### 🔧 Core Extensions
+
 - **CoreExtension**: System commands (help, reload, command search)
 - **TabExtension**: Tab search, switching, closing, and management
 - **HistoryExtension**: Browser history search and navigation
