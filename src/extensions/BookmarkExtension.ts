@@ -8,8 +8,11 @@ import type {
 } from '@/types/extension';
 
 import { BaseExtension } from '@/services/extensionRegistry';
-
-import { getDomain, getFaviconUrl } from '../utils/urlUtils';
+import {
+  getDomain,
+  getExtensionIconUrl,
+  getFaviconUrl,
+} from '@/utils/urlUtils';
 
 class BookmarkExtension extends BaseExtension {
   id = 'bookmark';
@@ -18,7 +21,7 @@ class BookmarkExtension extends BaseExtension {
 
   description = 'Search and manage browser bookmarks';
 
-  icon = 'chrome://favicon/size/16@2x/chrome://bookmarks/';
+  icon = getExtensionIconUrl('public/bookmark_icon.png');
 
   commands: Command[] = [
     {
