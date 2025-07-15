@@ -1,16 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
-import { OmniTabProvider } from '@/contexts/OmniTabContext';
+import { useOmniTabStore } from '@/stores/omniTabStore';
 
 import OmniTab from './OmniTab';
 
 export default function ContentApp() {
-  const [isOpen, setIsOpen] = useState(false);
+  const isOpen = useOmniTabStore((state) => state.isOpen);
+  const close = useOmniTabStore((state) => state.close);
 
   useEffect(() => {
     const handleMessage = (message: { action?: string }) => {
       if (message.action === 'toggle-omnitab') {
-        setIsOpen((prev) => !prev);
+        const store = useOmniTabStore.getState();
+        if (store.isOpen) {
+          store.close();
+        } else {
+          store.open();
+        }
       }
     };
 
@@ -21,13 +27,5 @@ export default function ContentApp() {
     };
   }, []);
 
-  const handleClose = () => {
-    setIsOpen(false);
-  };
-
-  return (
-    <OmniTabProvider>
-      <OmniTab isOpen={isOpen} onClose={handleClose} />
-    </OmniTabProvider>
-  );
+  return <OmniTab isOpen={isOpen} onClose={close} />;
 }

@@ -21,7 +21,7 @@ export default defineManifest({
     48: 'icon48.png',
     128: 'icon128.png',
   },
-  permissions: ['tabs', 'tabGroups', 'history', 'bookmarks'],
+  permissions: ['tabs', 'tabGroups', 'history', 'bookmarks', 'favicon'],
   action: {
     default_title: 'Open OmniTab search',
   },

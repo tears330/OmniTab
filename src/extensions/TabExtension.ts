@@ -8,7 +8,7 @@ import type {
 } from '@/types/extension';
 
 import { BaseExtension } from '@/services/extensionRegistry';
-import { getDomain } from '@/utils/urlUtils';
+import { getDomain, getFaviconUrl } from '@/utils/urlUtils';
 
 class TabExtension extends BaseExtension {
   id = 'tab';
@@ -136,9 +136,9 @@ class TabExtension extends BaseExtension {
   private tabToSearchResult(tab: chrome.tabs.Tab): SearchResult {
     return {
       id: `tab-${tab.id}`,
-      title: tab.title || 'Untitled',
-      description: getDomain(tab.url || ''),
-      icon: tab.favIconUrl || chrome.runtime.getURL('icon16.png'),
+      title: tab.title ?? 'Untitled',
+      description: getDomain(tab.url ?? ''),
+      icon: getFaviconUrl(tab.url ?? ''),
       type: 'tab',
       actions: [
         {
