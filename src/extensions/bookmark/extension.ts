@@ -125,7 +125,7 @@ class BookmarkExtension extends BaseExtension {
             payload.actionId === BookmarkActionId.EDIT &&
             payload.metadata?.id
           ) {
-            return editBookmark(payload.metadata.id as string);
+            return editBookmark();
           }
 
           return {
