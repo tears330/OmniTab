@@ -8,7 +8,11 @@ import type {
 } from '@/types/extension';
 
 import { BaseExtension } from '@/services/extensionRegistry';
-import { getDomain, getFaviconUrl } from '@/utils/urlUtils';
+import {
+  getDomain,
+  getExtensionIconUrl,
+  getFaviconUrl,
+} from '@/utils/urlUtils';
 
 class HistoryExtension extends BaseExtension {
   id = 'history';
@@ -17,7 +21,7 @@ class HistoryExtension extends BaseExtension {
 
   description = 'Search and manage browser history';
 
-  icon = 'chrome://favicon/size/16@2x/chrome://history/';
+  icon = getExtensionIconUrl('public/history_icon.png');
 
   commands: Command[] = [
     {

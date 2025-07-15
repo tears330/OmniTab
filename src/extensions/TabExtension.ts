@@ -8,7 +8,11 @@ import type {
 } from '@/types/extension';
 
 import { BaseExtension } from '@/services/extensionRegistry';
-import { getDomain, getFaviconUrl } from '@/utils/urlUtils';
+import {
+  getDomain,
+  getExtensionIconUrl,
+  getFaviconUrl,
+} from '@/utils/urlUtils';
 
 class TabExtension extends BaseExtension {
   id = 'tab';
@@ -17,7 +21,7 @@ class TabExtension extends BaseExtension {
 
   description = 'Search, switch, and manage browser tabs';
 
-  icon = 'chrome://favicon/size/16@2x/chrome://newtab/';
+  icon = getExtensionIconUrl('public/tab_icon.png');
 
   commands: Command[] = [
     {
