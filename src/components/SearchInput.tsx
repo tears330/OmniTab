@@ -27,7 +27,7 @@ export default function SearchInput({
           e.stopPropagation();
           onKeyDown(e);
         }}
-        placeholder='Search tabs, history, bookmarks... (↑↓ or ^N/^P to navigate)'
+        placeholder='Type to search or use shortcuts: t (tabs), h (history), b (bookmarks)'
         className='w-full border-0 bg-transparent text-lg text-gray-100 placeholder-gray-500 focus:outline-none'
         autoComplete='off'
         spellCheck={false}

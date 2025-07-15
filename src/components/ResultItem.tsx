@@ -1,60 +1,55 @@
 /**
- * Individual search result item component
+ * Individual search result item component for extension architecture
  */
-import type { SearchResult } from '@/types';
-import type { ActionCallbacks } from '@/utils/resultActions';
+import type { SearchResult } from '@/types/extension';
 import type React from 'react';
-
-import {
-  getFaviconFallbacks,
-  getHostnameFromUrl,
-  resolveFaviconUrl,
-} from '@/utils/faviconUtils';
-import { hasModifierKey } from '@/utils/keyboardUtils';
-import { executeResultAction } from '@/utils/resultActions';
 
 interface ResultItemProps {
   result: SearchResult;
   index: number;
   isSelected: boolean;
-  onClick: (result: SearchResult, index: number, e?: React.MouseEvent) => void;
+  onSelect: (index: number) => void;
+  onAction: (resultId: string, actionId: string) => void;
   resultRef: (el: HTMLDivElement | null) => void;
-  actionCallbacks: ActionCallbacks;
 }
 
 export default function ResultItem({
   result,
   index,
   isSelected,
-  onClick,
+  onSelect,
+  onAction,
   resultRef,
-  actionCallbacks,
 }: ResultItemProps) {
-  const handleFaviconError = (
-    e: React.SyntheticEvent<HTMLImageElement, Event>
-  ) => {
-    const img = e.target as HTMLImageElement;
-    const fallbacks = getFaviconFallbacks(result.url);
-    const currentSrc = img.src;
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
 
-    // Find next fallback to try
-    const currentIndex = fallbacks.findIndex((src) => src === currentSrc);
-    const nextIndex = currentIndex + 1;
-
-    if (nextIndex < fallbacks.length) {
-      img.src = fallbacks[nextIndex];
+    // Check if modifier key is pressed for secondary action
+    if (e.ctrlKey || e.metaKey) {
+      const secondaryAction = result.actions.find((a) => !a.primary);
+      if (secondaryAction) {
+        onAction(result.id, secondaryAction.id);
+      }
+    } else {
+      // Primary action
+      onSelect(index);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      const modifierPressed = hasModifierKey(e);
-      executeResultAction(result, actionCallbacks, modifierPressed);
+      onSelect(index);
     }
   };
 
-  const getResultTypeLabel = (type: SearchResult['type']): string => {
+  const handleFaviconError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.target as HTMLImageElement;
+    // Fallback to default icon
+    img.src = chrome.runtime.getURL('icon16.png');
+  };
+
+  const getTypeLabel = (type: string): string => {
     switch (type) {
       case 'tab':
         return 'Tab';
@@ -62,47 +57,58 @@ export default function ResultItem({
         return 'History';
       case 'bookmark':
         return 'Bookmark';
+      case 'command':
+        return 'Command';
       default:
-        return 'Unknown';
+        return type.charAt(0).toUpperCase() + type.slice(1);
     }
   };
 
   return (
     <div
-      key={result.id}
       ref={resultRef}
-      className={`group mx-3 mb-1 flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 transition-colors duration-150 ${
+      className={`group mx-3 mb-1 flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 transition-colors duration-150 ${
         isSelected ? 'bg-white/10' : 'hover:bg-white/5'
       }`}
-      onClick={(e) => onClick(result, index, e)}
+      onClick={handleClick}
       onKeyDown={handleKeyDown}
       role='button'
       tabIndex={0}
     >
+      {/* Icon */}
       <div className='flex-shrink-0'>
         <div className='flex h-8 w-8 items-center justify-center rounded-md bg-gray-800/50 ring-1 ring-white/5'>
-          <img
-            src={resolveFaviconUrl(result.favIconUrl, result.url)}
-            alt=''
-            className='h-4 w-4'
-            onError={handleFaviconError}
-          />
+          {result.icon ? (
+            <img
+              src={result.icon}
+              alt=''
+              className='h-4 w-4'
+              onError={handleFaviconError}
+            />
+          ) : (
+            <div className='h-4 w-4 rounded bg-gray-600' />
+          )}
         </div>
       </div>
+
+      {/* Content */}
       <div className='min-w-0 flex-1'>
-        <div className='flex min-w-0 items-center gap-2'>
-          <span className='min-w-0 truncate text-sm font-medium text-gray-100'>
+        <div className='flex items-center gap-2'>
+          <span className='truncate text-sm font-medium text-gray-100'>
             {result.title}
           </span>
-          <span className='flex-shrink-0 text-xs text-gray-500'>•</span>
-          <span className='flex-shrink-0 text-xs text-gray-500'>
-            {getHostnameFromUrl(result.url)}
-          </span>
+          {result.description && (
+            <span className='min-w-0 flex-shrink-0 text-sm text-gray-500'>
+              {result.description}
+            </span>
+          )}
         </div>
       </div>
+
+      {/* Type */}
       <div className='flex-shrink-0'>
         <span className='text-xs text-gray-500'>
-          {getResultTypeLabel(result.type)}
+          {getTypeLabel(result.type)}
         </span>
       </div>
     </div>

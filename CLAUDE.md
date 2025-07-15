@@ -6,6 +6,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 OmniTab is a keyboard-first tab manager Chrome extension that provides a Spotlight-like interface for searching and switching between browser tabs. Built with Vite, TypeScript, React, Tailwind CSS, and DaisyUI.
 
+## Extension-Based Architecture (New)
+
+OmniTab now uses a modular extension-based architecture where functionality is organized into pluggable extensions:
+
+### Core Extensions
+
+- **CoreExtension** (`src/extensions/CoreExtension.ts`) - System commands (help, reload)
+- **TabExtension** (`src/extensions/TabExtension.ts`) - Tab search, switch, close, duplicate management
+- **HistoryExtension** (`src/extensions/HistoryExtension.ts`) - Browser history search
+- **BookmarkExtension** (`src/extensions/BookmarkExtension.ts`) - Bookmark search
+
+### Architecture Components
+
+- **Extension Registry** (`src/services/extensionRegistry.ts`) - Manages extension lifecycle and command routing
+- **Message Broker** (`src/services/messageBroker.ts`) - Handles communication between content and background scripts
+- **OmniTab Context** (`src/contexts/OmniTabContext.tsx`) - React context for state management and extension interaction
+
 ## Key Commands
 
 ```bash
@@ -51,6 +68,7 @@ The main OmniTab component has been refactored into a clean, modular architectur
 - `src/utils/resultActions.ts` - Search result action handling with type-specific logic
 - `src/utils/keyboardUtils.ts` - Keyboard event utilities and Emacs navigation support
 - `src/utils/fuzzySearch.ts` - Intelligent fuzzy search with category-based scoring
+- `src/utils/urlUtils.ts` - URL-related utility functions including domain extraction from URL
 
 #### **Custom Hooks**
 
@@ -83,7 +101,8 @@ The main OmniTab component has been refactored into a clean, modular architectur
 1. Content scripts use shadow DOM via `createShadowRoot` utility to isolate styles
 2. Dev mode includes visual indicators (e.g., "➡️ Dev" in extension name)
 3. Font assets are bundled and served from `src/assets/fonts/`
-4. Permissions: `activeTab` and `storage` are configured in manifest
+4. Fallback icons are accessible via `chrome.runtime.getURL('icon16.png')` - icons are included in `web_accessible_resources` for production builds
+5. Permissions: `activeTab` and `storage` are configured in manifest
 
 ### Code Quality Tools
 
@@ -92,6 +111,21 @@ The main OmniTab component has been refactored into a clean, modular architectur
 - **Import Order**: Enforced by Prettier plugin with specific grouping (built-ins → React → types → third-party → local → styles)
 - **Testing**: Comprehensive unit tests with 93%+ coverage for fuzzy search algorithm
 - **Type Safety**: Strict TypeScript with no `any` types in production code
+
+### ESLint Configuration
+
+The project uses a comprehensive ESLint setup (`/.eslintrc.cjs`) with:
+
+- **Base**: ESLint recommended + TypeScript recommended rules
+- **React**: React hooks rules + Airbnb React style guide
+- **Prettier**: Integration for consistent formatting
+- **Key Rules**:
+  - React Refresh for component exports
+  - TypeScript-specific rules for unused vars and shadowing
+  - Jest plugin for test files with specific test rules
+  - Chrome global for extension APIs
+  - TypeScript import resolver for path aliases
+- **Important**: All generated code must follow these ESLint rules. Run `pnpm lint` to check
 
 ### Navigation & Keyboard Shortcuts
 
@@ -160,3 +194,6 @@ pnpm test:watch
 - Web accessible resources include all JS/CSS files and public assets
 - The refactored architecture supports both the original monolithic component and the new modular structure
 - All components follow single responsibility principle for better maintainability and testing
+- Extension-based architecture allows for easy addition of new search providers
+- Each extension can provide multiple commands (search or action types)
+- Command aliases enable quick access (e.g., 't' for tabs, 'h' for history, 'b' for bookmarks)
