@@ -1,87 +1,110 @@
-/**
- * Refactored OmniTab component using hooks and smaller components
- */
-import React, { useEffect, useRef } from 'react';
-import type { SearchResult } from '@/types';
-import type { ActionCallbacks } from '@/utils/resultActions';
+import React, { useCallback, useEffect, useState } from 'react';
 
+import ActionsMenu from '@/components/ActionsMenu';
 import EmptyState from '@/components/EmptyState';
 import ResultsList from '@/components/ResultsList';
 import SearchInput from '@/components/SearchInput';
 import StatusBar from '@/components/StatusBar';
+import { useOmniTab } from '@/contexts/OmniTabContext';
 import useKeyboardNavigation from '@/hooks/useKeyboardNavigation';
-import useResultNavigation from '@/hooks/useResultNavigation';
-import useSearchResults from '@/hooks/useSearchResults';
-import { hasModifierKey } from '@/utils/keyboardUtils';
-import { executeResultAction } from '@/utils/resultActions';
 
 interface OmniTabProps {
+  isOpen: boolean;
   onClose: () => void;
 }
 
-export default function OmniTab({ onClose }: OmniTabProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
+function OmniTab({ isOpen, onClose }: OmniTabProps) {
+  const { state, dispatch, performSearch, executeAction } = useOmniTab();
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
 
-  // Custom hooks for state management
-  const { searchTerm, setSearchTerm, results, isLoading, removeResult } =
-    useSearchResults();
-  const {
-    selectedIndex,
-    setSelectedIndex,
-    resultRefs,
-    navigate,
-    adjustAfterRemoval,
-  } = useResultNavigation(results.length);
-
-  // Focus input when component mounts
+  // Update state when isOpen changes
   useEffect(() => {
-    inputRef.current?.focus();
+    if (isOpen) {
+      dispatch({ type: 'OPEN' });
+    } else {
+      dispatch({ type: 'CLOSE' });
+      setIsActionsMenuOpen(false);
+    }
+  }, [isOpen, dispatch]);
+
+  // Focus input when opened
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isOpen]);
+
+  // Handle search query changes
+  const handleSearchChange = useCallback(
+    (query: string) => {
+      performSearch(query);
+    },
+    [performSearch]
+  );
+
+  // Handle result selection
+  const handleSelectResult = useCallback(
+    (index: number) => {
+      const result = state.results[index];
+      if (!result) return;
+
+      const primaryAction = result.actions.find((a) => a.primary);
+      if (primaryAction) {
+        executeAction(result.id, primaryAction.id);
+      }
+    },
+    [state.results, executeAction]
+  );
+
+  // Handle selected index change
+  const handleSelectIndex = useCallback(
+    (index: number) => {
+      dispatch({
+        type: 'SET_SELECTED_INDEX',
+        payload: index,
+      });
+    },
+    [dispatch]
+  );
+
+  // Handle opening actions menu
+  const handleOpenActionsMenu = useCallback(() => {
+    const result = state.results[state.selectedIndex];
+    if (!result) return;
+
+    // Check if there are secondary actions
+    const hasSecondaryActions = result.actions.some((a) => !a.primary);
+    if (hasSecondaryActions) {
+      setIsActionsMenuOpen(true);
+    }
+  }, [state.results, state.selectedIndex]);
+
+  // Handle closing actions menu
+  const handleCloseActionsMenu = useCallback(() => {
+    setIsActionsMenuOpen(false);
   }, []);
 
-  // Action callbacks for result actions
-  const actionCallbacks: ActionCallbacks = {
-    onClose,
-    onTabClosed: (removedIndex: number) => {
-      removeResult(removedIndex);
-      adjustAfterRemoval();
+  // Handle action selection from menu
+  const handleActionMenuSelect = useCallback(
+    (resultId: string, actionId: string) => {
+      executeAction(resultId, actionId);
+      setIsActionsMenuOpen(false);
     },
-  };
+    [executeAction]
+  );
 
-  // Keyboard navigation
+  // Use keyboard navigation hook
   const { handleKeyDown } = useKeyboardNavigation({
-    results,
-    selectedIndex,
-    onNavigate: navigate,
+    results: state.results,
+    selectedIndex: state.selectedIndex,
+    onSelectIndex: handleSelectIndex,
     onClose,
-    actionCallbacks,
+    onExecuteAction: executeAction,
+    onOpenActionsMenu: handleOpenActionsMenu,
   });
 
-  // Handle result click
-  const handleResultClick = (
-    result: SearchResult,
-    index: number,
-    e?: React.MouseEvent
-  ) => {
-    setSelectedIndex(index);
-
-    // Check for modifier keys in click events
-    const modifierPressed = e ? hasModifierKey(e) : false;
-
-    // Create updated action callbacks with correct removal index
-    const clickActionCallbacks: ActionCallbacks = {
-      onClose,
-      onTabClosed: () => {
-        removeResult(index);
-        adjustAfterRemoval();
-      },
-    };
-
-    executeResultAction(result, clickActionCallbacks, modifierPressed);
-  };
-
-  const showResults = results.length > 0;
-  const showEmptyState = !isLoading && results.length === 0;
-  const showStatusBar = results.length > 0 || isLoading;
+  if (!isOpen) return null;
 
   return (
     <div
@@ -104,35 +127,42 @@ export default function OmniTab({ onClose }: OmniTabProps) {
       >
         <div className='overflow-hidden rounded-xl bg-gray-900/95 shadow-2xl ring-1 ring-white/10 backdrop-blur-xl'>
           <SearchInput
-            value={searchTerm}
-            onChange={setSearchTerm}
-            onKeyDown={handleKeyDown}
             inputRef={inputRef}
+            value={state.query}
+            onChange={handleSearchChange}
+            onKeyDown={handleKeyDown}
           />
 
-          {showEmptyState && (
-            <EmptyState searchTerm={searchTerm} isLoading={isLoading} />
-          )}
-
-          {showResults && (
+          {state.results.length > 0 ? (
             <ResultsList
-              results={results}
-              selectedIndex={selectedIndex}
-              onResultClick={handleResultClick}
-              resultRefs={resultRefs}
-              actionCallbacks={actionCallbacks}
+              results={state.results}
+              selectedIndex={state.selectedIndex}
+              onSelectResult={handleSelectResult}
+              onActionResult={executeAction}
             />
+          ) : (
+            <EmptyState searchTerm={state.query} isLoading={state.loading} />
           )}
 
-          {showStatusBar && (
-            <StatusBar
-              isLoading={isLoading}
-              results={results}
-              selectedIndex={selectedIndex}
-            />
-          )}
+          <StatusBar
+            resultCount={state.results.length}
+            selectedIndex={state.selectedIndex}
+            selectedResult={state.results[state.selectedIndex]}
+            loading={state.loading}
+            activeCommand={state.activeCommand}
+            error={state.error}
+          />
         </div>
       </div>
+
+      <ActionsMenu
+        isOpen={isActionsMenuOpen}
+        selectedResult={state.results[state.selectedIndex]}
+        onClose={handleCloseActionsMenu}
+        onSelectAction={handleActionMenuSelect}
+      />
     </div>
   );
 }
+
+export default OmniTab;

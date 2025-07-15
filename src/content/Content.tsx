@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 
+import { OmniTabProvider } from '@/contexts/OmniTabContext';
+
 import OmniTab from './OmniTab';
 
-export default function Content() {
+export default function ContentApp() {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    // Listen for messages from background script
-    const handleMessage = (request: { action: string }) => {
-      if (request.action === 'toggle-omnitab') {
+    const handleMessage = (message: { action?: string }) => {
+      if (message.action === 'toggle-omnitab') {
         setIsOpen((prev) => !prev);
       }
     };
@@ -20,34 +21,13 @@ export default function Content() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!isOpen) return undefined;
+  const handleClose = () => {
+    setIsOpen(false);
+  };
 
-    // Prevent keyboard events from reaching the page, but allow our own handlers
-    const handleKeyCapture = (e: KeyboardEvent) => {
-      // Only stop propagation if the event target is not within our OmniTab component
-      const target = e.target as HTMLElement;
-      const isOmniTabElement = target.closest('[data-omnitab]');
-
-      if (!isOmniTabElement) {
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-      }
-    };
-
-    // Use bubble phase instead of capture to allow our handlers to process first
-    document.addEventListener('keydown', handleKeyCapture);
-    document.addEventListener('keyup', handleKeyCapture);
-    document.addEventListener('keypress', handleKeyCapture);
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyCapture);
-      document.removeEventListener('keyup', handleKeyCapture);
-      document.removeEventListener('keypress', handleKeyCapture);
-    };
-  }, [isOpen]);
-
-  if (!isOpen) return null;
-
-  return <OmniTab onClose={() => setIsOpen(false)} />;
+  return (
+    <OmniTabProvider>
+      <OmniTab isOpen={isOpen} onClose={handleClose} />
+    </OmniTabProvider>
+  );
 }

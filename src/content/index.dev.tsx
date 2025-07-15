@@ -11,7 +11,7 @@
 
 import { createRoot } from 'react-dom/client';
 
-import Content from './Content';
+import ContentV2 from './Content';
 
 import '@assets/styles/index.css';
 
@@ -32,4 +32,4 @@ document.body.appendChild(container);
 
 // Render the application inside the shadow root
 const root = createRoot(shadowRoot);
-root.render(<Content />);
+root.render(<ContentV2 />);

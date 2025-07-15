@@ -21,15 +21,15 @@ export default defineManifest({
     48: 'icon48.png',
     128: 'icon128.png',
   },
-  permissions: ['tabs', 'history', 'bookmarks'],
+  permissions: ['tabs', 'tabGroups', 'history', 'bookmarks'],
   action: {
     default_title: 'Open OmniTab search',
   },
   commands: {
     _execute_action: {
       suggested_key: {
-        default: 'Ctrl+J',
-        mac: 'Command+J',
+        default: 'Ctrl+Shift+K',
+        mac: 'Command+Shift+K',
       },
       description: 'Open OmniTab search',
     },
@@ -44,7 +44,7 @@ export default defineManifest({
   ],
   web_accessible_resources: [
     {
-      resources: ['*.js', '*.css', 'public/*'],
+      resources: ['*.js', '*.css', 'public/*', '*.png'],
       matches: ['<all_urls>'],
     },
   ],

@@ -79,3 +79,49 @@ export function navigateInDirection(
       return currentIndex;
   }
 }
+
+/**
+ * Handles Emacs-style navigation
+ */
+export function handleEmacsNavigation(
+  e: React.KeyboardEvent,
+  currentIndex: number,
+  arrayLength: number
+): { handled: boolean; newIndex?: number; shouldSelect?: boolean } {
+  const emacsResult = isEmacsNavigation(e);
+
+  if (!emacsResult.isEmacs) {
+    return { handled: false };
+  }
+
+  if (emacsResult.direction === 'next') {
+    return {
+      handled: true,
+      newIndex: getNextIndex(currentIndex, arrayLength),
+    };
+  }
+
+  if (emacsResult.direction === 'prev') {
+    return {
+      handled: true,
+      newIndex: getPrevIndex(currentIndex, arrayLength),
+    };
+  }
+
+  return { handled: false };
+}
+
+/**
+ * Handles Tab key behavior
+ */
+export function handleTabKey(
+  e: React.KeyboardEvent,
+  _inputElement: HTMLInputElement | null // eslint-disable-line @typescript-eslint/no-unused-vars
+): { handled: boolean } {
+  if (e.key !== 'Tab') {
+    return { handled: false };
+  }
+
+  // Let Tab work normally for now
+  return { handled: false };
+}
