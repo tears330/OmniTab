@@ -1,5 +1,5 @@
 import type { Command, OmniTabState, SearchResult } from '@/types/extension';
-import { clamp, debounce, memoize } from 'es-toolkit';
+import { clamp, debounce } from 'es-toolkit';
 import { create } from 'zustand';
 
 import { getContentBroker } from '@/services/messageBroker';
@@ -43,20 +43,6 @@ const initialState: OmniTabState = {
   activeCommand: undefined,
   availableCommands: [],
 };
-
-// Create memoized search function with cache key based on query and available commands
-// This caches search results to avoid redundant API calls for identical queries
-// Cache is cleared when available commands change
-const memoizedPerformSearch = memoize(performSearchService, {
-  getCacheKey: (options) => {
-    // Create a cache key from query and command IDs
-    const commandIds = options.availableCommands
-      .map((cmd) => cmd.id)
-      .sort()
-      .join(',');
-    return `${options.query}::${commandIds}`;
-  },
-});
 
 export const useOmniTabStore = create<OmniTabStore>()((set, get) => ({
   ...initialState,
@@ -129,8 +115,6 @@ export const useOmniTabStore = create<OmniTabStore>()((set, get) => ({
       if (response.success && response.data) {
         const { commands } = response.data as { commands: Command[] };
         set({ availableCommands: commands });
-        // Clear memoization cache when commands change
-        memoizedPerformSearch.cache.clear();
       }
     } catch (error) {
       // Failed to load commands
@@ -170,8 +154,8 @@ export const useOmniTabStore = create<OmniTabStore>()((set, get) => ({
 
     try {
       const broker = getContentBroker();
-      // Use memoized search for better performance
-      const searchResult = await memoizedPerformSearch({
+      // Perform search directly
+      const searchResult = await performSearchService({
         query,
         availableCommands,
         broker,
