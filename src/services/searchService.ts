@@ -10,7 +10,6 @@ import {
   createEmptyResult,
   createErrorResult,
   createSuccessResult,
-  findCommandByAlias,
   parseCommand,
   parseCommandId,
   safeSearchRequest,
@@ -89,7 +88,9 @@ export async function performSearch(
   try {
     // Check if alias matches a specific command
     if (alias) {
-      const command = findCommandByAlias(alias, availableCommands);
+      const command = availableCommands.find((cmd) =>
+        cmd.alias?.includes(alias.toLowerCase())
+      );
 
       if (command) {
         const { extensionId, commandId } = parseCommandId(command.id);

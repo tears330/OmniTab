@@ -24,15 +24,6 @@ export function isEmacsNavigation(e: React.KeyboardEvent): {
 }
 
 /**
- * Checks if a keyboard or mouse event has modifier keys
- */
-export function hasModifierKey(
-  e: React.KeyboardEvent | React.MouseEvent
-): boolean {
-  return e.ctrlKey || e.metaKey;
-}
-
-/**
  * Calculates the next index for circular navigation
  */
 export function getNextIndex(
@@ -108,20 +99,5 @@ export function handleEmacsNavigation(
     };
   }
 
-  return { handled: false };
-}
-
-/**
- * Handles Tab key behavior
- */
-export function handleTabKey(
-  e: React.KeyboardEvent,
-  _inputElement: HTMLInputElement | null // eslint-disable-line @typescript-eslint/no-unused-vars
-): { handled: boolean } {
-  if (e.key !== 'Tab') {
-    return { handled: false };
-  }
-
-  // Let Tab work normally for now
   return { handled: false };
 }

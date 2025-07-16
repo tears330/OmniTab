@@ -20,17 +20,6 @@ export function getDomain(url: string): string {
 }
 
 /**
- * Extracts hostname from URL safely
- */
-export function getHostnameFromUrl(url: string): string {
-  try {
-    return new URL(url).hostname;
-  } catch {
-    return url;
-  }
-}
-
-/**
  * Gets a favicon URL using Chrome's _favicon API for optimal performance and reliability
  * @param pageUrl - The URL of the page to get favicon for
  * @param size - Favicon size (default: 32)

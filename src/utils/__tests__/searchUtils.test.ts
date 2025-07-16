@@ -1,10 +1,7 @@
-import type { Command } from '@/types/extension';
-
 import {
   createEmptyResult,
   createErrorResult,
   createSuccessResult,
-  findCommandByAlias,
   parseCommand,
   parseCommandId,
   safeSearchRequest,
@@ -159,54 +156,6 @@ describe('searchUtils', () => {
         activeExtension: 'tab',
         activeCommand: 'search',
       });
-    });
-  });
-
-  describe('findCommandByAlias', () => {
-    const mockCommands: Command[] = [
-      {
-        id: 'tab.search',
-        name: 'Search Tabs',
-        description: 'Search tabs',
-        alias: ['t', 'tab', 'tabs'],
-        type: 'search',
-      },
-      {
-        id: 'history.search',
-        name: 'Search History',
-        description: 'Search history',
-        alias: ['h', 'history'],
-        type: 'search',
-      },
-    ];
-
-    it('should find command by alias', () => {
-      const result = findCommandByAlias('t', mockCommands);
-      expect(result).toEqual(mockCommands[0]);
-    });
-
-    it('should find command by case-insensitive alias', () => {
-      const result = findCommandByAlias('TAB', mockCommands);
-      expect(result).toEqual(mockCommands[0]);
-    });
-
-    it('should return undefined for unknown alias', () => {
-      const result = findCommandByAlias('unknown', mockCommands);
-      expect(result).toBeUndefined();
-    });
-
-    it('should return undefined when command has no aliases', () => {
-      const commandsWithoutAlias: Command[] = [
-        {
-          id: 'test.command',
-          name: 'Test Command',
-          description: 'Test',
-          type: 'action',
-        },
-      ];
-
-      const result = findCommandByAlias('test', commandsWithoutAlias);
-      expect(result).toBeUndefined();
     });
   });
 
