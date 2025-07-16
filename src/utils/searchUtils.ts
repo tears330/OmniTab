@@ -3,7 +3,7 @@
  */
 
 import type { SearchBroker, SearchResults } from '@/types';
-import type { Command, SearchResult } from '@/types/extension';
+import type { SearchResult } from '@/types/extension';
 
 /**
  * Utility function to parse command from query
@@ -99,16 +99,4 @@ export async function safeSearchRequest(
     // Ignore individual extension failures
     return [];
   }
-}
-
-/**
- * Finds a command by alias from available commands
- */
-export function findCommandByAlias(
-  alias: string,
-  availableCommands: Command[]
-): Command | undefined {
-  return availableCommands.find((cmd) =>
-    cmd.alias?.includes(alias.toLowerCase())
-  );
 }

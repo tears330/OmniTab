@@ -115,8 +115,6 @@ The main OmniTab component has been refactored into a clean, modular architectur
 
 #### **Custom Hooks**
 
-- `src/hooks/useSearchResults.ts` - Search state management, loading, and debouncing
-- `src/hooks/useResultNavigation.ts` - Selection state and navigation logic
 - `src/hooks/useKeyboardNavigation.ts` - Keyboard event handling and action execution
 - **Zustand Store Integration**: Components use `useOmniTabStore` directly for optimal performance and automatic reactivity
 
