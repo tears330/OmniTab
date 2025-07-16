@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [main, develop]
 
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  checks: write
+
 jobs:
   ci:
     name: CI Pipeline
@@ -124,35 +130,45 @@ jobs:
           pnpm lint --format unix || true
 
       - name: Comment ESLint results on PR
-        if: always() && github.event_name == 'pull_request'
+        if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         uses: actions/github-script@v7
+        continue-on-error: true
         with:
           script: |
             const fs = require('fs');
-            if (fs.existsSync('eslint-report.json')) {
-              const eslintReport = JSON.parse(fs.readFileSync('eslint-report.json', 'utf8'));
-              const errorCount = eslintReport.reduce((sum, file) => sum + file.errorCount, 0);
-              const warningCount = eslintReport.reduce((sum, file) => sum + file.warningCount, 0);
-              
-              const comment = `## 🔍 ESLint Report
-              
-              **Errors:** ${errorCount}  
-              **Warnings:** ${warningCount}
-              
-              ${errorCount === 0 && warningCount === 0 ? '✅ No linting issues found!' : ''}
-              `;
-              
-              github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: comment
-              });
+            try {
+              if (fs.existsSync('eslint-report.json')) {
+                const eslintReport = JSON.parse(fs.readFileSync('eslint-report.json', 'utf8'));
+                const errorCount = eslintReport.reduce((sum, file) => sum + file.errorCount, 0);
+                const warningCount = eslintReport.reduce((sum, file) => sum + file.warningCount, 0);
+                
+                const comment = `## 🔍 ESLint Report
+                
+                **Errors:** ${errorCount}  
+                **Warnings:** ${warningCount}
+                
+                ${errorCount === 0 && warningCount === 0 ? '✅ No linting issues found!' : ''}
+                `;
+                
+                await github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: comment
+                });
+              }
+            } catch (error) {
+              console.log('Could not comment on PR:', error.message);
+              console.log('This is expected for PRs from forks or when permissions are limited.');
             }
 
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
     
     steps:
       - name: Checkout code
