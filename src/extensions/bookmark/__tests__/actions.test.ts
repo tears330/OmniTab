@@ -34,7 +34,7 @@ describe('Bookmark Extension Actions', () => {
     it('should open bookmark in new tab', async () => {
       const testUrl = 'https://example.com';
 
-      mockChrome.tabs.create.mockImplementation((options, callback) => {
+      mockChrome.tabs.create.mockImplementation((_options, callback) => {
         callback({ id: 123 });
       });
 
@@ -50,7 +50,7 @@ describe('Bookmark Extension Actions', () => {
     it('should handle tab creation error', async () => {
       const testUrl = 'https://example.com';
 
-      mockChrome.tabs.create.mockImplementation((options, callback) => {
+      mockChrome.tabs.create.mockImplementation((_options, callback) => {
         (mockChrome.runtime as any).lastError = {
           message: 'Cannot create tab',
         };
@@ -70,7 +70,7 @@ describe('Bookmark Extension Actions', () => {
     it('should remove bookmark successfully', async () => {
       const bookmarkId = '123';
 
-      mockChrome.bookmarks.remove.mockImplementation((id, callback) => {
+      mockChrome.bookmarks.remove.mockImplementation((_id, callback) => {
         callback();
       });
 
@@ -89,7 +89,7 @@ describe('Bookmark Extension Actions', () => {
     it('should handle bookmark removal error', async () => {
       const bookmarkId = '123';
 
-      mockChrome.bookmarks.remove.mockImplementation((id, callback) => {
+      mockChrome.bookmarks.remove.mockImplementation((_id, callback) => {
         (mockChrome.runtime as any).lastError = {
           message: 'Cannot remove bookmark',
         };
@@ -107,7 +107,7 @@ describe('Bookmark Extension Actions', () => {
 
   describe('openBookmarkManager', () => {
     it('should open bookmark manager', async () => {
-      mockChrome.tabs.create.mockImplementation((options, callback) => {
+      mockChrome.tabs.create.mockImplementation((_options, callback) => {
         callback({ id: 123 });
       });
 
@@ -121,7 +121,7 @@ describe('Bookmark Extension Actions', () => {
     });
 
     it('should handle tab creation error', async () => {
-      mockChrome.tabs.create.mockImplementation((options, callback) => {
+      mockChrome.tabs.create.mockImplementation((_options, callback) => {
         (mockChrome.runtime as any).lastError = {
           message: 'Cannot open bookmark manager',
         };
@@ -139,7 +139,7 @@ describe('Bookmark Extension Actions', () => {
 
   describe('editBookmark', () => {
     it('should open bookmark manager for editing', async () => {
-      mockChrome.tabs.create.mockImplementation((options, callback) => {
+      mockChrome.tabs.create.mockImplementation((_options, callback) => {
         callback({ id: 123 });
       });
 
@@ -162,7 +162,7 @@ describe('Bookmark Extension Actions', () => {
         active: true,
       };
 
-      mockChrome.tabs.query.mockImplementation((query, callback) => {
+      mockChrome.tabs.query.mockImplementation((_query, callback) => {
         callback([mockTab]);
       });
 
@@ -172,7 +172,7 @@ describe('Bookmark Extension Actions', () => {
         url: 'https://example.com',
       };
 
-      mockChrome.bookmarks.create.mockImplementation((options, callback) => {
+      mockChrome.bookmarks.create.mockImplementation((_options, callback) => {
         callback(mockBookmark);
       });
 
@@ -199,7 +199,7 @@ describe('Bookmark Extension Actions', () => {
     });
 
     it('should handle no current tab', async () => {
-      mockChrome.tabs.query.mockImplementation((query, callback) => {
+      mockChrome.tabs.query.mockImplementation((_query, callback) => {
         callback([]);
       });
 
@@ -219,7 +219,7 @@ describe('Bookmark Extension Actions', () => {
         active: true,
       };
 
-      mockChrome.tabs.query.mockImplementation((query, callback) => {
+      mockChrome.tabs.query.mockImplementation((_query, callback) => {
         callback([mockTab]);
       });
 
@@ -239,7 +239,7 @@ describe('Bookmark Extension Actions', () => {
         active: true,
       };
 
-      mockChrome.tabs.query.mockImplementation((query, callback) => {
+      mockChrome.tabs.query.mockImplementation((_query, callback) => {
         callback([mockTab]);
       });
 
@@ -259,11 +259,11 @@ describe('Bookmark Extension Actions', () => {
         active: true,
       };
 
-      mockChrome.tabs.query.mockImplementation((query, callback) => {
+      mockChrome.tabs.query.mockImplementation((_query, callback) => {
         callback([mockTab]);
       });
 
-      mockChrome.bookmarks.create.mockImplementation((options, callback) => {
+      mockChrome.bookmarks.create.mockImplementation((_options, callback) => {
         (mockChrome.runtime as any).lastError = {
           message: 'Cannot create bookmark',
         };
@@ -286,7 +286,7 @@ describe('Bookmark Extension Actions', () => {
         active: true,
       };
 
-      mockChrome.tabs.query.mockImplementation((query, callback) => {
+      mockChrome.tabs.query.mockImplementation((_query, callback) => {
         callback([mockTab]);
       });
 

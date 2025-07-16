@@ -32,7 +32,7 @@ describe('History Extension Actions', () => {
     it('should open history item in new tab', async () => {
       const testUrl = 'https://example.com';
 
-      mockChrome.tabs.create.mockImplementation((options, callback) => {
+      mockChrome.tabs.create.mockImplementation((_options, callback) => {
         callback({ id: 123 });
       });
 
@@ -48,7 +48,7 @@ describe('History Extension Actions', () => {
     it('should handle tab creation error', async () => {
       const testUrl = 'https://example.com';
 
-      mockChrome.tabs.create.mockImplementation((options, callback) => {
+      mockChrome.tabs.create.mockImplementation((_options, callback) => {
         (mockChrome.runtime as any).lastError = {
           message: 'Cannot create tab',
         };
@@ -68,7 +68,7 @@ describe('History Extension Actions', () => {
     it('should remove history item successfully', async () => {
       const testUrl = 'https://example.com';
 
-      mockChrome.history.deleteUrl.mockImplementation((options, callback) => {
+      mockChrome.history.deleteUrl.mockImplementation((_options, callback) => {
         callback();
       });
 
@@ -87,7 +87,7 @@ describe('History Extension Actions', () => {
     it('should handle history deletion error', async () => {
       const testUrl = 'https://example.com';
 
-      mockChrome.history.deleteUrl.mockImplementation((options, callback) => {
+      mockChrome.history.deleteUrl.mockImplementation((_options, callback) => {
         (mockChrome.runtime as any).lastError = {
           message: 'Cannot delete history',
         };
@@ -111,9 +111,11 @@ describe('History Extension Actions', () => {
       jest.useFakeTimers();
       jest.setSystemTime(mockDate);
 
-      mockChrome.history.deleteRange.mockImplementation((options, callback) => {
-        callback();
-      });
+      mockChrome.history.deleteRange.mockImplementation(
+        (_options, callback) => {
+          callback();
+        }
+      );
 
       const result = await clearTodayHistory();
 
@@ -138,12 +140,14 @@ describe('History Extension Actions', () => {
     });
 
     it('should handle history deletion error', async () => {
-      mockChrome.history.deleteRange.mockImplementation((options, callback) => {
-        (mockChrome.runtime as any).lastError = {
-          message: 'Cannot clear history',
-        };
-        callback();
-      });
+      mockChrome.history.deleteRange.mockImplementation(
+        (_options, callback) => {
+          (mockChrome.runtime as any).lastError = {
+            message: 'Cannot clear history',
+          };
+          callback();
+        }
+      );
 
       const result = await clearTodayHistory();
 
@@ -163,9 +167,11 @@ describe('History Extension Actions', () => {
       // Mock Date.now
       Date.now = jest.fn(() => mockNow);
 
-      mockChrome.history.deleteRange.mockImplementation((options, callback) => {
-        callback();
-      });
+      mockChrome.history.deleteRange.mockImplementation(
+        (_options, callback) => {
+          callback();
+        }
+      );
 
       const result = await clearLastHourHistory();
 
@@ -186,12 +192,14 @@ describe('History Extension Actions', () => {
     });
 
     it('should handle history deletion error', async () => {
-      mockChrome.history.deleteRange.mockImplementation((options, callback) => {
-        (mockChrome.runtime as any).lastError = {
-          message: 'Cannot clear history',
-        };
-        callback();
-      });
+      mockChrome.history.deleteRange.mockImplementation(
+        (_options, callback) => {
+          (mockChrome.runtime as any).lastError = {
+            message: 'Cannot clear history',
+          };
+          callback();
+        }
+      );
 
       const result = await clearLastHourHistory();
 

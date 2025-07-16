@@ -37,7 +37,7 @@ describe('Tab Extension Actions', () => {
   describe('switchToTab', () => {
     it('should switch to tab successfully', async () => {
       const mockTab = { id: 123, windowId: 456 };
-      mockChrome.tabs.get.mockImplementation((tabId, callback) => {
+      mockChrome.tabs.get.mockImplementation((_tabId, callback) => {
         callback(mockTab);
       });
 
@@ -57,7 +57,7 @@ describe('Tab Extension Actions', () => {
     });
 
     it('should handle tab not found error', async () => {
-      mockChrome.tabs.get.mockImplementation((tabId, callback) => {
+      mockChrome.tabs.get.mockImplementation((_tabId, callback) => {
         (mockChrome.runtime as any).lastError = { message: 'Tab not found' };
         callback(null);
       });
@@ -73,7 +73,7 @@ describe('Tab Extension Actions', () => {
 
   describe('closeTab', () => {
     it('should close tab successfully', async () => {
-      mockChrome.tabs.remove.mockImplementation((tabId, callback) => {
+      mockChrome.tabs.remove.mockImplementation((_tabId, callback) => {
         callback();
       });
 
@@ -87,7 +87,7 @@ describe('Tab Extension Actions', () => {
     });
 
     it('should handle tab removal error', async () => {
-      mockChrome.tabs.remove.mockImplementation((tabId, callback) => {
+      mockChrome.tabs.remove.mockImplementation((_tabId, callback) => {
         (mockChrome.runtime as any).lastError = { message: 'Cannot close tab' };
         callback();
       });
@@ -110,11 +110,11 @@ describe('Tab Extension Actions', () => {
         { id: 4, url: 'https://example.com', active: false },
       ];
 
-      mockChrome.tabs.query.mockImplementation((query, callback) => {
+      mockChrome.tabs.query.mockImplementation((_query, callback) => {
         callback(mockTabs);
       });
 
-      mockChrome.tabs.remove.mockImplementation((tabIds, callback) => {
+      mockChrome.tabs.remove.mockImplementation((_tabIds, callback) => {
         callback();
       });
 
@@ -142,7 +142,7 @@ describe('Tab Extension Actions', () => {
         { id: 2, url: 'https://google.com' },
       ];
 
-      mockChrome.tabs.query.mockImplementation((query, callback) => {
+      mockChrome.tabs.query.mockImplementation((_query, callback) => {
         callback(mockTabs);
       });
 
@@ -161,11 +161,11 @@ describe('Tab Extension Actions', () => {
         { id: 2, url: 'https://example.com' },
       ];
 
-      mockChrome.tabs.query.mockImplementation((query, callback) => {
+      mockChrome.tabs.query.mockImplementation((_query, callback) => {
         callback(mockTabs);
       });
 
-      mockChrome.tabs.remove.mockImplementation((tabIds, callback) => {
+      mockChrome.tabs.remove.mockImplementation((_tabIds, callback) => {
         (mockChrome.runtime as any).lastError = {
           message: 'Cannot remove tabs',
         };
@@ -197,7 +197,7 @@ describe('Tab Extension Actions', () => {
         { id: 4, url: 'https://github.com/repo' },
       ];
 
-      mockChrome.tabs.query.mockImplementation((query, callback) => {
+      mockChrome.tabs.query.mockImplementation((_query, callback) => {
         callback(mockTabs);
       });
 
@@ -240,7 +240,7 @@ describe('Tab Extension Actions', () => {
         { id: 2, url: 'https://google.com' },
       ];
 
-      mockChrome.tabs.query.mockImplementation((query, callback) => {
+      mockChrome.tabs.query.mockImplementation((_query, callback) => {
         callback(mockTabs);
       });
 
@@ -261,7 +261,7 @@ describe('Tab Extension Actions', () => {
         { id: 2, url: 'https://example.com' },
       ];
 
-      mockChrome.tabs.query.mockImplementation((query, callback) => {
+      mockChrome.tabs.query.mockImplementation((_query, callback) => {
         callback(mockTabs);
       });
 
