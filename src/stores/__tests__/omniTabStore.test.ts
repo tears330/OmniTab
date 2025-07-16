@@ -1,7 +1,6 @@
 import type { Command, SearchResult } from '@/types/extension';
 
 // Import the store after mocks are set up
-// eslint-disable-next-line import/first
 import { performDebouncedSearch, useOmniTabStore } from '../omniTabStore';
 
 // Mock message broker
