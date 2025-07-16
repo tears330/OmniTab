@@ -45,7 +45,7 @@ describe('Tab Extension Search', () => {
         { id: 2, title: 'Tab 2', url: 'https://google.com' },
       ];
 
-      mockChrome.tabs.query.mockImplementation((query, callback) => {
+      mockChrome.tabs.query.mockImplementation((_query, callback) => {
         callback(mockTabs);
       });
 
@@ -65,7 +65,7 @@ describe('Tab Extension Search', () => {
         { id: 3, title: 'GitHub', url: 'https://github.com' },
       ];
 
-      mockChrome.tabs.query.mockImplementation((query, callback) => {
+      mockChrome.tabs.query.mockImplementation((_query, callback) => {
         callback(mockTabs);
       });
 
@@ -82,7 +82,7 @@ describe('Tab Extension Search', () => {
         { id: 3, title: 'Tab 3', url: 'https://github.com' },
       ];
 
-      mockChrome.tabs.query.mockImplementation((query, callback) => {
+      mockChrome.tabs.query.mockImplementation((_query, callback) => {
         callback(mockTabs);
       });
 
@@ -98,7 +98,7 @@ describe('Tab Extension Search', () => {
         { id: 2, title: 'Google Search', url: 'https://google.com' },
       ];
 
-      mockChrome.tabs.query.mockImplementation((query, callback) => {
+      mockChrome.tabs.query.mockImplementation((_query, callback) => {
         callback(mockTabs);
       });
 
@@ -114,7 +114,7 @@ describe('Tab Extension Search', () => {
         { id: 2, title: 'Tab 2', url: 'https://google.com' },
       ];
 
-      mockChrome.tabs.query.mockImplementation((query, callback) => {
+      mockChrome.tabs.query.mockImplementation((_query, callback) => {
         callback(mockTabs);
       });
 
@@ -129,7 +129,7 @@ describe('Tab Extension Search', () => {
         { id: 2, title: 'Valid Tab', url: 'https://example.com' },
       ];
 
-      mockChrome.tabs.query.mockImplementation((query, callback) => {
+      mockChrome.tabs.query.mockImplementation((_query, callback) => {
         callback(mockTabs);
       });
 
@@ -153,6 +153,7 @@ describe('Tab Extension Search', () => {
         incognito: false,
         index: 0,
         highlighted: false,
+        selected: false,
         discarded: false,
         autoDiscardable: true,
         groupId: -1,
@@ -204,6 +205,7 @@ describe('Tab Extension Search', () => {
         incognito: false,
         index: 0,
         highlighted: false,
+        selected: false,
         discarded: false,
         autoDiscardable: true,
         groupId: -1,
@@ -226,6 +228,7 @@ describe('Tab Extension Search', () => {
         incognito: false,
         index: 0,
         highlighted: false,
+        selected: false,
         discarded: false,
         autoDiscardable: true,
         groupId: -1,
@@ -235,7 +238,7 @@ describe('Tab Extension Search', () => {
 
       expect(getDomain).toHaveBeenCalledWith('');
       expect(getFaviconUrl).toHaveBeenCalledWith('');
-      expect(result.metadata.url).toBeUndefined();
+      expect(result.metadata?.url).toBeUndefined();
     });
 
     it('should preserve all metadata', () => {
@@ -250,6 +253,7 @@ describe('Tab Extension Search', () => {
         incognito: true,
         index: 2,
         highlighted: true,
+        selected: false,
         discarded: false,
         autoDiscardable: false,
         groupId: 789,

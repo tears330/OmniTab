@@ -300,7 +300,7 @@ describe('Bookmark Extension Search', () => {
     it('should handle bookmark without title', () => {
       const mockBookmark: chrome.bookmarks.BookmarkTreeNode = {
         id: '123',
-        title: undefined,
+        title: undefined as any,
         url: 'https://example.com',
         dateAdded: 1642248600000,
         parentId: '456',
@@ -329,7 +329,7 @@ describe('Bookmark Extension Search', () => {
         '',
         BOOKMARK_LIMITS.FAVICON_SIZE
       );
-      expect(result.metadata.url).toBeUndefined();
+      expect(result.metadata?.url).toBeUndefined();
     });
 
     it('should handle bookmark with null title', () => {

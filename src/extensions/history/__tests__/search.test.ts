@@ -46,7 +46,7 @@ describe('History Extension Search', () => {
         { id: '2', title: 'Test Page', url: 'https://test.com' },
       ];
 
-      mockChrome.history.search.mockImplementation((options, callback) => {
+      mockChrome.history.search.mockImplementation((_options, callback) => {
         callback(mockHistoryItems);
       });
 
@@ -73,7 +73,7 @@ describe('History Extension Search', () => {
 
       jest.spyOn(Date, 'now').mockReturnValue(mockNow);
 
-      mockChrome.history.search.mockImplementation((options, callback) => {
+      mockChrome.history.search.mockImplementation((_options, callback) => {
         callback(mockHistoryItems);
       });
 
@@ -95,7 +95,7 @@ describe('History Extension Search', () => {
         { id: '1', title: 'Recent Page', url: 'https://recent.com' },
       ];
 
-      mockChrome.history.search.mockImplementation((options, callback) => {
+      mockChrome.history.search.mockImplementation((_options, callback) => {
         callback(mockHistoryItems);
       });
 
@@ -109,7 +109,7 @@ describe('History Extension Search', () => {
         { id: '1', title: 'Recent Page', url: 'https://recent.com' },
       ];
 
-      mockChrome.history.search.mockImplementation((options, callback) => {
+      mockChrome.history.search.mockImplementation((_options, callback) => {
         callback(mockHistoryItems);
       });
 
@@ -126,7 +126,7 @@ describe('History Extension Search', () => {
     });
 
     it('should return empty array when no history items found', async () => {
-      mockChrome.history.search.mockImplementation((options, callback) => {
+      mockChrome.history.search.mockImplementation((_options, callback) => {
         callback([]);
       });
 
@@ -207,7 +207,7 @@ describe('History Extension Search', () => {
 
       expect(getDomain).toHaveBeenCalledWith('');
       expect(getFaviconUrl).toHaveBeenCalledWith('');
-      expect(result.metadata.url).toBeUndefined();
+      expect(result.metadata?.url).toBeUndefined();
     });
 
     it('should handle history item with null title', () => {

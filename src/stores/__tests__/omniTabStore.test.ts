@@ -17,7 +17,7 @@ jest.mock('@/services/messageBroker', () => ({
 // Mock search service
 const mockPerformSearchService = jest.fn();
 jest.mock('@/services/searchService', () => ({
-  performSearch: mockPerformSearchService,
+  performSearch: jest.fn(() => mockPerformSearchService()),
 }));
 
 // Mock extensions
