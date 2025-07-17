@@ -14,3 +14,6 @@ export * from './history';
 
 // Bookmark Extension - Bookmark search and management
 export * from './bookmark';
+
+// TopSites Extension - Most visited sites search and management
+export * from './topsites';

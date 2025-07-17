@@ -5,6 +5,7 @@ import {
   CoreExtension,
   HistoryExtension,
   TabExtension,
+  TopSitesExtension,
 } from '../extensions';
 
 // Initialize extension registry
@@ -20,6 +21,7 @@ async function initializeExtensions() {
     await registry.registerExtension(new TabExtension());
     await registry.registerExtension(new HistoryExtension());
     await registry.registerExtension(new BookmarkExtension());
+    await registry.registerExtension(new TopSitesExtension());
 
     // All extensions registered successfully
   } catch (error) {

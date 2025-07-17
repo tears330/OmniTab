@@ -270,6 +270,30 @@ describe('useKeyboardNavigation', () => {
       expect(mockOnClose).not.toHaveBeenCalled();
       expect(mockOnExecuteAction).not.toHaveBeenCalled();
     });
+
+    it('should always stop event propagation to prevent page shortcuts', () => {
+      const { result } = renderHook(() =>
+        useKeyboardNavigation({
+          results: mockResults,
+          selectedIndex: 0,
+          onSelectIndex: mockOnSelectIndex,
+          onClose: mockOnClose,
+          onExecuteAction: mockOnExecuteAction,
+        })
+      );
+
+      // Test with various keys - all should stop propagation
+      const testKeys = ['a', 's', 'Enter', 'Escape', 'ArrowUp', 'ArrowDown'];
+
+      testKeys.forEach((key) => {
+        const event = createKeyboardEvent(key);
+        act(() => {
+          result.current.handleKeyDown(event);
+        });
+
+        expect(event.stopPropagation).toHaveBeenCalled();
+      });
+    });
   });
 
   describe('Actions Menu Navigation', () => {
@@ -526,9 +550,9 @@ describe('useKeyboardNavigation', () => {
         result.current.handleKeyDown(event);
       });
 
-      // Should not prevent default for unhandled keys
+      // Should not prevent default for unhandled keys, but should stop propagation
       expect(event.preventDefault).not.toHaveBeenCalled();
-      expect(event.stopPropagation).not.toHaveBeenCalled();
+      expect(event.stopPropagation).toHaveBeenCalled();
     });
   });
 

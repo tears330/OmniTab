@@ -26,8 +26,8 @@ export default defineManifest({
     48: 'icon48.png',
     128: 'icon128.png',
   },
-  permissions: ['tabs', 'history', 'bookmarks', 'favicon'],
-  optional_permissions: ['tabGroups', 'topSites'],
+  permissions: ['tabs', 'history', 'bookmarks', 'favicon', 'topSites'],
+  optional_permissions: ['tabGroups'],
   host_permissions: [],
   content_security_policy: {
     extension_pages: "script-src 'self'; object-src 'self'",

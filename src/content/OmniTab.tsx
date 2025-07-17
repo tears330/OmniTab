@@ -84,24 +84,49 @@ function OmniTab({ isOpen, onClose }: OmniTabProps) {
 
         if (isTextInputKey) {
           inputRef.current.focus();
-          // For character keys, we need to manually update the input value
-          if (e.key.length === 1) {
-            const currentValue = store.query;
-            const newValue = currentValue + e.key;
-            handleSearchChange(newValue);
-            e.preventDefault();
-          }
+          // Don't manually update the input value - let the input handle it naturally
+          // The focus() will allow the input to handle the keypress normally
         }
       }
     },
-    [handleNavigationKeyDown, onClose, store.query, handleSearchChange]
+    [handleNavigationKeyDown, onClose]
   );
 
   // Handle search input specific key events
   const handleSearchInputKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      // Let navigation handle the event
-      handleNavigationKeyDown(e);
+      // Only handle specific navigation keys, let everything else pass through
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        handleNavigationKeyDown(e);
+        return;
+      }
+
+      if (e.key === 'Enter') {
+        handleNavigationKeyDown(e);
+        return;
+      }
+
+      if (e.key === 'Escape') {
+        handleNavigationKeyDown(e);
+        return;
+      }
+
+      // Handle Cmd/Ctrl+K for actions menu
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+        handleNavigationKeyDown(e);
+        return;
+      }
+
+      // Handle Emacs navigation (Ctrl+N/P)
+      if (
+        e.ctrlKey &&
+        (e.key === 'n' || e.key === 'N' || e.key === 'p' || e.key === 'P')
+      ) {
+        handleNavigationKeyDown(e);
+      }
+
+      // For all other keys (including text input, Cmd+A, etc.), let them pass through naturally
+      // Don't call handleNavigationKeyDown for these
     },
     [handleNavigationKeyDown]
   );
@@ -138,7 +163,7 @@ function OmniTab({ isOpen, onClose }: OmniTabProps) {
               onActionResult={store.executeAction}
             />
           ) : (
-            <EmptyState searchTerm={store.query} isLoading={store.loading} />
+            <EmptyState searchTerm={store.query} />
           )}
 
           <StatusBar
