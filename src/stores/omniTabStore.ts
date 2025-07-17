@@ -9,6 +9,9 @@ import createStoreLogger from '@/utils/storeLogger';
 
 import { TAB_EXTENSION_ID, TabCommandId } from '../extensions';
 
+// Flag to prevent circular dependency in search subscription
+let isPerformingDirectSearch = false;
+
 interface OmniTabStore extends OmniTabState {
   // Actions Menu State
   isActionsMenuOpen: boolean;
@@ -272,17 +275,18 @@ export const useOmniTabStore = create<OmniTabStore>()(
           performSearch: async (query: string) => {
             const { availableCommands, loadInitialResults } = get();
 
-            set({ selectedIndex: 0 }, false, 'performSearch');
-
-            if (!query.trim()) {
-              set({ loading: true }, false, 'performSearch');
-              await loadInitialResults();
-              return;
-            }
-
-            set({ loading: true }, false, 'performSearch');
+            isPerformingDirectSearch = true;
+            set({ query, selectedIndex: 0 }, false, 'performSearch');
 
             try {
+              if (!query.trim()) {
+                set({ loading: true }, false, 'performSearch');
+                await loadInitialResults();
+                return;
+              }
+
+              set({ loading: true }, false, 'performSearch');
+
               const broker = getContentBroker();
               // Perform search directly
               const searchResult = await performSearchService({
@@ -327,6 +331,8 @@ export const useOmniTabStore = create<OmniTabStore>()(
                 false,
                 'performSearch'
               );
+            } finally {
+              isPerformingDirectSearch = false;
             }
           },
 
@@ -773,9 +779,10 @@ const debouncedPerformSearch = debounce((query: string) => {
 
 // Subscribe to query changes for debounced search
 let previousQuery = '';
+
 useOmniTabStore.subscribe((state) => {
   const currentQuery = state.query;
-  if (currentQuery !== previousQuery) {
+  if (currentQuery !== previousQuery && !isPerformingDirectSearch) {
     previousQuery = currentQuery;
     if (currentQuery) {
       debouncedPerformSearch(currentQuery);
