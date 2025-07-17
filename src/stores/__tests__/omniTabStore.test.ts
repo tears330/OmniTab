@@ -1,7 +1,8 @@
+/* eslint-disable no-promise-executor-return */
 import type { Command, SearchResult } from '@/types/extension';
 
 // Import the store after mocks are set up
-import { performDebouncedSearch, useOmniTabStore } from '../omniTabStore';
+import { useOmniTabStore } from '../omniTabStore';
 
 // Mock message broker
 const mockBroker = {
@@ -51,7 +52,23 @@ describe('omniTabStore', () => {
   });
 
   describe('Basic Actions', () => {
-    it('should open and set loading state', () => {
+    it('should open and set loading state', async () => {
+      // Mock the initial results load
+      const mockResults: SearchResult[] = [
+        {
+          id: 'initial-1',
+          title: 'Initial Result',
+          description: '',
+          type: 'tab',
+          actions: [],
+        },
+      ];
+
+      mockBroker.sendSearchRequest.mockResolvedValue({
+        success: true,
+        data: mockResults,
+      });
+
       useOmniTabStore.getState().open();
 
       const state = useOmniTabStore.getState();
@@ -421,10 +438,11 @@ describe('omniTabStore', () => {
           activeCommand: 'search',
         });
 
-        // In real usage, query is set via setQuery, then performSearch is called
-        // This test should reflect that pattern
+        // Set query and wait for debounced search to complete
         useOmniTabStore.getState().setQuery('test query');
-        await useOmniTabStore.getState().performSearch('test query');
+
+        // Wait for debounced search to complete
+        await new Promise((resolve) => setTimeout(resolve, 400));
 
         const state = useOmniTabStore.getState();
         expect(state.query).toBe('test query');
@@ -451,8 +469,11 @@ describe('omniTabStore', () => {
           data: mockResults,
         });
 
+        // Set empty query and wait for debounced search
         useOmniTabStore.getState().setQuery('   ');
-        await useOmniTabStore.getState().performSearch('   '); // Whitespace only
+
+        // Wait for debounced search to complete
+        await new Promise((resolve) => setTimeout(resolve, 400));
 
         expect(mockBroker.sendSearchRequest).toHaveBeenCalledWith(
           'tab',
@@ -472,7 +493,11 @@ describe('omniTabStore', () => {
           error: 'Search failed',
         });
 
-        await useOmniTabStore.getState().performSearch('test query');
+        // Set query and wait for debounced search to complete
+        useOmniTabStore.getState().setQuery('test query');
+
+        // Wait for debounced search to complete
+        await new Promise((resolve) => setTimeout(resolve, 400));
 
         const state = useOmniTabStore.getState();
         expect(state.error).toBe('Search failed');
@@ -482,7 +507,11 @@ describe('omniTabStore', () => {
       it('should handle search exception', async () => {
         mockPerformSearchService.mockRejectedValue(new Error('Network error'));
 
-        await useOmniTabStore.getState().performSearch('test query');
+        // Set query and wait for debounced search to complete
+        useOmniTabStore.getState().setQuery('test query');
+
+        // Wait for debounced search to complete
+        await new Promise((resolve) => setTimeout(resolve, 400));
 
         const state = useOmniTabStore.getState();
         expect(state.error).toBe('Network error');
@@ -500,7 +529,11 @@ describe('omniTabStore', () => {
           .getState()
           .setActiveExtension({ extensionId: 'tab', commandId: 'search' });
 
-        await useOmniTabStore.getState().performSearch('test query');
+        // Set query and wait for debounced search to complete
+        useOmniTabStore.getState().setQuery('test query');
+
+        // Wait for debounced search to complete
+        await new Promise((resolve) => setTimeout(resolve, 400));
 
         const state = useOmniTabStore.getState();
         expect(state.activeExtension).toBeUndefined();
@@ -524,45 +557,6 @@ describe('omniTabStore', () => {
       const state = useOmniTabStore.getState();
       expect(state.activeExtension).toBe('search');
       expect(state.activeCommand).toBeUndefined();
-    });
-  });
-
-  describe('performDebouncedSearch helper', () => {
-    it('should set query and load initial results for empty query', async () => {
-      const mockResults: SearchResult[] = [
-        {
-          id: 'initial-1',
-          title: 'Initial Result',
-          description: '',
-          type: 'tab',
-          actions: [],
-        },
-      ];
-
-      mockBroker.sendSearchRequest.mockResolvedValue({
-        success: true,
-        data: mockResults,
-      });
-
-      performDebouncedSearch('');
-
-      const state = useOmniTabStore.getState();
-      expect(state.query).toBe('');
-      expect(state.loading).toBe(true);
-    });
-
-    it('should set query for non-empty query', () => {
-      performDebouncedSearch('test query');
-
-      expect(useOmniTabStore.getState().query).toBe('test query');
-    });
-
-    it('should handle whitespace-only query', () => {
-      performDebouncedSearch('   ');
-
-      const state = useOmniTabStore.getState();
-      expect(state.query).toBe('   ');
-      expect(state.loading).toBe(true);
     });
   });
 
@@ -647,7 +641,7 @@ describe('omniTabStore', () => {
 
       // Wrap to last from first
       useOmniTabStore.getState().setActionsMenuSelectedIndex(-1);
-      expect(useOmniTabStore.getState().actionsMenuSelectedIndex).toBe(1); // 2 secondary actions
+      expect(useOmniTabStore.getState().actionsMenuSelectedIndex).toBe(1); // 2 secondary actions, last index is 1
     });
 
     it('should not set actions menu index when no secondary actions', () => {
@@ -727,14 +721,19 @@ describe('omniTabStore', () => {
     });
 
     it('should handle store subscription and query changes', async () => {
-      // Mock the debounced search function
-      jest.clearAllMocks();
+      // Mock the search result
+      mockPerformSearchService.mockResolvedValue({
+        results: [],
+        loading: false,
+      });
 
       // Change query to trigger subscription
       useOmniTabStore.getState().setQuery('test');
 
-      // Subscription should be triggered
+      // Subscription should be triggered and call performSearch
       expect(useOmniTabStore.getState().query).toBe('test');
+      // The subscription calls performSearch which is debounced
+      // We can't easily test the debounced call directly, but we can verify the query was set
     });
 
     it('should handle empty query changes in subscription', () => {

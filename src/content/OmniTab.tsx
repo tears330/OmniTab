@@ -5,7 +5,7 @@ import ResultsList from '@/components/ResultsList';
 import SearchInput from '@/components/SearchInput';
 import StatusBar from '@/components/StatusBar';
 import useKeyboardNavigation from '@/hooks/useKeyboardNavigation';
-import { performDebouncedSearch, useOmniTabStore } from '@/stores/omniTabStore';
+import { useOmniTabStore } from '@/stores/omniTabStore';
 
 interface OmniTabProps {
   isOpen: boolean;
@@ -24,9 +24,12 @@ function OmniTab({ isOpen, onClose }: OmniTabProps) {
   }, [isOpen]);
 
   // Handle search query changes
-  const handleSearchChange = useCallback((query: string) => {
-    performDebouncedSearch(query);
-  }, []);
+  const handleSearchChange = useCallback(
+    (query: string) => {
+      store.setQuery(query);
+    },
+    [store]
+  );
 
   // Handle result selection
   const handleSelectResult = useCallback(
