@@ -48,7 +48,7 @@ export default function ResultsList({
   return (
     <div
       ref={containerRef}
-      className='scrollbar-thin scrollbar-track-gray-900 scrollbar-thumb-gray-700 mt-2 max-h-[400px] overflow-y-auto overflow-x-hidden pb-1'
+      className='scrollbar-thin scrollbar-track-gray-900 scrollbar-thumb-gray-700 max-h-[400px] overflow-y-auto overflow-x-hidden pb-1'
     >
       {results.map((result, index) => (
         <ResultItem

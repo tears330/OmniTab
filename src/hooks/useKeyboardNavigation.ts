@@ -242,6 +242,9 @@ export default function useKeyboardNavigation({
   // Main keyboard event handler
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent): boolean => {
+      // Always stop propagation to prevent triggering page shortcuts
+      e.stopPropagation();
+
       // Handle actions menu navigation first if it's open
       if (isActionsMenuOpen) {
         const handled = handleActionsMenuNavigation(e);

@@ -4,14 +4,9 @@
 
 interface EmptyStateProps {
   searchTerm: string;
-  isLoading: boolean;
 }
 
-export default function EmptyState({ searchTerm, isLoading }: EmptyStateProps) {
-  if (isLoading) {
-    return null; // Loading state is handled in StatusBar
-  }
-
+export default function EmptyState({ searchTerm }: EmptyStateProps) {
   if (searchTerm) {
     return (
       <div className='px-6 py-12 text-center'>

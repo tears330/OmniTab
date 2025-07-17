@@ -290,7 +290,6 @@ export const useOmniTabStore = create<OmniTabStore>()(
                 availableCommands,
                 broker,
               });
-
               set(
                 {
                   results: searchResult.results,
