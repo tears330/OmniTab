@@ -421,6 +421,9 @@ describe('omniTabStore', () => {
           activeCommand: 'search',
         });
 
+        // In real usage, query is set via setQuery, then performSearch is called
+        // This test should reflect that pattern
+        useOmniTabStore.getState().setQuery('test query');
         await useOmniTabStore.getState().performSearch('test query');
 
         const state = useOmniTabStore.getState();
@@ -448,6 +451,7 @@ describe('omniTabStore', () => {
           data: mockResults,
         });
 
+        useOmniTabStore.getState().setQuery('   ');
         await useOmniTabStore.getState().performSearch('   '); // Whitespace only
 
         expect(mockBroker.sendSearchRequest).toHaveBeenCalledWith(
