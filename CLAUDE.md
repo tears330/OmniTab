@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-OmniTab is a keyboard-first tab manager Chrome extension that provides a Spotlight-like interface for searching and switching between browser tabs. Built with Vite, TypeScript, React, Tailwind CSS, and DaisyUI.
+OmniTab is a keyboard-first tab manager Chrome extension that provides a Spotlight-like interface for searching and switching between browser tabs. Built with Vite, TypeScript, React, Tailwind CSS, and DaisyUI. The extension supports searching across tabs, browser history, bookmarks, and most visited sites with fuzzy matching and intelligent ranking.
 
 ## Extension-Based Architecture (New)
 
@@ -25,15 +25,17 @@ src/extensions/
 │   └── index.ts (module exports)
 ├── tab/ (tab management)
 ├── history/ (browser history)
-└── bookmark/ (bookmark search)
+├── bookmark/ (bookmark search)
+└── topsites/ (most visited sites)
 ```
 
 ### Core Extensions
 
 - **CoreExtension** (`src/extensions/core/`) - System commands (help, reload) with modular structure
-- **TabExtension** (`src/extensions/TabExtension.ts`) - Tab search, switch, close, duplicate management
-- **HistoryExtension** (`src/extensions/HistoryExtension.ts`) - Browser history search
-- **BookmarkExtension** (`src/extensions/BookmarkExtension.ts`) - Bookmark search
+- **TabExtension** (`src/extensions/tab/`) - Tab search, switch, close, duplicate management
+- **HistoryExtension** (`src/extensions/history/`) - Browser history search
+- **BookmarkExtension** (`src/extensions/bookmark/`) - Bookmark search
+- **TopSitesExtension** (`src/extensions/topsites/`) - Search Chrome's most visited sites
 
 ### Extension Development Guidelines
 
@@ -110,8 +112,8 @@ The main OmniTab component has been refactored into a clean, modular architectur
 - `src/utils/searchUtils.ts` - **Core search utilities** including command parsing, result creation, and safe search operations
 - `src/utils/urlUtils.ts` - URL-related utility functions including domain extraction and favicon resolution
 - `src/utils/keyboardUtils.ts` - Keyboard event utilities and Emacs navigation support
-- `src/utils/resultActions.ts` - Search result action handling with type-specific logic
 - `src/utils/createShadowRoot.tsx` - Shadow DOM creation utility for style isolation
+- `src/utils/storeLogger.ts` - Development-only store state logging utility for debugging
 
 #### **Custom Hooks**
 
@@ -125,6 +127,8 @@ The main OmniTab component has been refactored into a clean, modular architectur
 - `src/components/ResultsList.tsx` - Container for all results with scrolling
 - `src/components/StatusBar.tsx` - Loading indicator and context-sensitive shortcuts
 - `src/components/EmptyState.tsx` - No results messaging with helpful hints
+- `src/components/ActionsMenu.tsx` - Context menu for result actions
+- `src/components/KeyboardShortcut.tsx` - Keyboard shortcut display component
 
 ### Key Technologies & Configuration
 
@@ -139,6 +143,7 @@ The main OmniTab component has been refactored into a clean, modular architectur
 - **Linting**: ESLint with Airbnb config + TypeScript rules + Jest plugin
 - **Formatting**: Prettier with import sorting and Tailwind class ordering
 - **Git Hooks**: Husky + lint-staged for pre-commit checks
+- **Type Definitions**: Centralized type definitions in `src/types/` for extension, search, and core types
 
 ### Development Workflow
 
@@ -146,7 +151,7 @@ The main OmniTab component has been refactored into a clean, modular architectur
 2. Dev mode includes visual indicators (e.g., "➡️ Dev" in extension name)
 3. Font assets are bundled and served from `src/assets/fonts/`
 4. Fallback icons are accessible via `chrome.runtime.getURL('icon16.png')` - icons are included in `web_accessible_resources` for production builds
-5. Permissions: `activeTab` and `storage` are configured in manifest
+5. Permissions: `tabs`, `history`, `bookmarks`, `favicon`, and `topSites` are configured in manifest, with optional `tabGroups` permission
 
 ### Code Quality Tools
 
@@ -220,9 +225,10 @@ OmniTab supports multiple navigation methods for maximum accessibility:
 #### **Search Features**
 
 - **Instant Search**: Results update as you type
-- **Category Filters**: Use prefixes like "tab", "history", "bookmark"
+- **Category Filters**: Use prefixes like "tab", "history", "bookmark", "topsites"
 - **Fuzzy Matching**: Intelligent scoring with substring and starts-with matching
-- **Category Priority**: Tabs ranked higher than history, history higher than bookmarks
+- **Category Priority**: Tabs ranked higher than history, history higher than bookmarks, bookmarks higher than topsites
+- **Most Visited Sites**: Access Chrome's top sites for quick navigation
 
 ### Testing
 
@@ -230,16 +236,22 @@ The project includes comprehensive testing with Jest:
 
 #### **Test Files**
 
-- `src/utils/__tests__/searchUtils.test.ts` - 21 tests covering search utilities (command parsing, result creation, safe operations)
-- `src/services/__tests__/searchService.test.ts` - 10 tests covering search service integration
-- `src/content/__tests__/OmniTab.actions.test.tsx` - 18 tests covering action system and Emacs navigation
+The project has comprehensive test coverage across all major components:
+
+- **Extension Tests**: Each extension has dedicated test files in `__tests__/` subdirectories
+- **Component Tests**: React components tested with React Testing Library
+- **Utility Tests**: Core utilities have full test coverage including search, keyboard, and URL utilities
+- **Service Tests**: Extension registry, message broker, and search service integration tests
+- **Store Tests**: Zustand store functionality and state management tests
 
 #### **Test Coverage**
 
-- **Search Utilities**: 100% coverage for all search-related functions including command parsing and result creation
-- **Search Service**: Comprehensive integration testing with mocked dependencies
-- **Total Tests**: 49+ tests, all passing
-- **Test Environment**: jsdom with React Testing Library support
+- **Extensions**: Comprehensive testing for all extension types (core, tab, history, bookmark, topsites)
+- **Components**: React components tested with user interaction scenarios
+- **Utilities**: High coverage for search, keyboard, URL, and store utilities
+- **Services**: Extension registry, message broker, and search service integration
+- **Total Test Files**: 26 test files covering all major functionality
+- **Test Environment**: Jest with jsdom and React Testing Library support
 
 #### **Running Tests**
 
@@ -374,5 +386,5 @@ pnpm lint
 - All components follow single responsibility principle for better maintainability and testing
 - Extension-based architecture allows for easy addition of new search providers
 - Each extension can provide multiple commands (search or action types)
-- Command aliases enable quick access (e.g., 't' for tabs, 'h' for history, 'b' for bookmarks)
+- Command aliases enable quick access (e.g., 't' for tabs, 'h' for history, 'b' for bookmarks, 'top' for topsites)
 - **Constants First**: Replace all hardcoded values with enums and constants defined in a dedicated constants file
