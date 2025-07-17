@@ -5,7 +5,6 @@ import { useCallback } from 'react';
 import type { SearchResult } from '@/types/extension';
 import type React from 'react';
 
-import { useOmniTabStore } from '@/stores/omniTabStore';
 import { handleEmacsNavigation } from '@/utils/keyboardUtils';
 
 interface UseKeyboardNavigationProps {
@@ -14,56 +13,39 @@ interface UseKeyboardNavigationProps {
   onSelectIndex: (index: number) => void;
   onClose: () => void;
   onExecuteAction: (resultId: string, actionId: string) => void;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
+  // Actions menu state
+  isActionsMenuOpen: boolean;
+  actionsMenuSelectedIndex: number;
+  onToggleActionsMenu: () => void;
+  onCloseActionsMenu: () => void;
+  onSetActionsMenuSelectedIndex: (index: number) => void;
 }
 
-// Semantic keyboard constants
-const KeyboardShortcuts = {
-  CLOSE: 'Escape',
-  CONFIRM: 'Enter',
-  NAVIGATE_UP: 'ArrowUp',
-  NAVIGATE_DOWN: 'ArrowDown',
-  TOGGLE_ACTIONS_MENU: ['k', 'K'],
-  EMACS_PREVIOUS: 'p',
-  EMACS_NEXT: 'n',
-} as const;
+// Utility functions
+function isTextInputKey(e: React.KeyboardEvent): boolean {
+  return (
+    (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) ||
+    ['Backspace', 'Delete'].includes(e.key)
+  );
+}
 
-// Type for keyboard handler map
-type KeyboardHandler = (e: React.KeyboardEvent) => void;
-type KeyboardHandlerMap = Record<string, KeyboardHandler>;
+function isNavigationKey(e: React.KeyboardEvent): boolean {
+  return (
+    ['ArrowUp', 'ArrowDown', 'Enter', 'Escape'].includes(e.key) ||
+    ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) ||
+    (e.ctrlKey && ['n', 'N', 'p', 'P'].includes(e.key))
+  );
+}
 
-// Type for handler result - can indicate if event was handled
-type HandlerResult = boolean | void;
-
-// Higher-order function to create keyboard navigation handler
-function createKeyboardNavigator(
-  handlers: KeyboardHandlerMap & {
-    default?: (e: React.KeyboardEvent) => HandlerResult;
-  },
-  options: {
-    preventDefault?: boolean;
-    stopPropagation?: boolean;
-  } = {}
-) {
-  return (e: React.KeyboardEvent): boolean => {
-    const { preventDefault = true, stopPropagation = false } = options;
-
-    // Check if we have a specific handler for this key
-    if (handlers[e.key]) {
-      if (preventDefault) e.preventDefault();
-      if (stopPropagation) e.stopPropagation();
-      handlers[e.key](e);
-      return true;
-    }
-
-    // If no specific handler, check default handler
-    if (handlers.default) {
-      const handled = handlers.default(e);
-      // Return true if the default handler explicitly handled the event
-      return handled === true;
-    }
-
-    return false;
-  };
+function focusInputIfNeeded(
+  inputRef?: React.RefObject<HTMLInputElement | null>
+): boolean {
+  if (inputRef?.current && document.activeElement !== inputRef.current) {
+    inputRef.current.focus();
+    return true;
+  }
+  return false;
 }
 
 export default function useKeyboardNavigation({
@@ -72,15 +54,13 @@ export default function useKeyboardNavigation({
   onSelectIndex,
   onClose,
   onExecuteAction,
+  inputRef,
+  isActionsMenuOpen,
+  actionsMenuSelectedIndex,
+  onToggleActionsMenu,
+  onCloseActionsMenu,
+  onSetActionsMenuSelectedIndex,
 }: UseKeyboardNavigationProps) {
-  const {
-    toggleActionsMenu,
-    isActionsMenuOpen,
-    actionsMenuSelectedIndex,
-    setActionsMenuSelectedIndex,
-    closeActionsMenu,
-  } = useOmniTabStore();
-
   // Execute primary action for a result
   const handleSelectResult = useCallback(
     (index: number) => {
@@ -101,7 +81,7 @@ export default function useKeyboardNavigation({
       const delta = direction === 'up' ? -1 : 1;
 
       if (isActionsMenuOpen) {
-        setActionsMenuSelectedIndex(actionsMenuSelectedIndex + delta);
+        onSetActionsMenuSelectedIndex(actionsMenuSelectedIndex + delta);
       } else {
         onSelectIndex(selectedIndex + delta);
       }
@@ -110,19 +90,26 @@ export default function useKeyboardNavigation({
       isActionsMenuOpen,
       actionsMenuSelectedIndex,
       selectedIndex,
-      setActionsMenuSelectedIndex,
+      onSetActionsMenuSelectedIndex,
       onSelectIndex,
     ]
   );
 
-  // Handle actions menu keyboard events
-  const handleActionsMenuNavigation = useCallback(
-    (e: React.KeyboardEvent) =>
-      createKeyboardNavigator(
-        {
-          [KeyboardShortcuts.CLOSE]: () => closeActionsMenu(),
+  // Main keyboard event handler
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent): boolean => {
+      e.stopPropagation();
 
-          [KeyboardShortcuts.CONFIRM]: () => {
+      // Handle actions menu navigation
+      if (isActionsMenuOpen) {
+        switch (e.key) {
+          case 'Escape':
+            e.preventDefault();
+            onCloseActionsMenu();
+            return true;
+
+          case 'Enter': {
+            e.preventDefault();
             const selectedResult = results[selectedIndex];
             const secondaryActions =
               selectedResult?.actions.filter((a) => !a.primary) || [];
@@ -131,91 +118,94 @@ export default function useKeyboardNavigation({
             if (selectedAction && selectedResult) {
               onExecuteAction(selectedResult.id, selectedAction.id);
             }
-          },
+            return true;
+          }
 
-          [KeyboardShortcuts.NAVIGATE_UP]: () => navigateSelection('up'),
-          [KeyboardShortcuts.NAVIGATE_DOWN]: () => navigateSelection('down'),
+          case 'ArrowUp':
+            e.preventDefault();
+            navigateSelection('up');
+            return true;
 
-          default: (event: React.KeyboardEvent) => {
-            // Emacs-style navigation
-            if (event.ctrlKey) {
-              if (event.key === KeyboardShortcuts.EMACS_PREVIOUS) {
-                event.preventDefault();
-                event.stopPropagation();
-                navigateSelection('up');
-                return true;
-              }
-              if (event.key === KeyboardShortcuts.EMACS_NEXT) {
-                event.preventDefault();
-                event.stopPropagation();
-                navigateSelection('down');
-                return true;
-              }
+          case 'ArrowDown':
+            e.preventDefault();
+            navigateSelection('down');
+            return true;
+
+          default:
+            // Handle Cmd/Ctrl+K for closing actions menu
+            if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+              e.preventDefault();
+              onCloseActionsMenu();
+              return true;
             }
 
-            // Direct action shortcuts (single letter keys)
-            if (!event.ctrlKey && !event.metaKey && !event.altKey) {
+            // Handle Emacs navigation in actions menu
+            if (e.ctrlKey && e.key === 'p') {
+              e.preventDefault();
+              navigateSelection('up');
+              return true;
+            }
+            if (e.ctrlKey && e.key === 'n') {
+              e.preventDefault();
+              navigateSelection('down');
+              return true;
+            }
+
+            // Handle direct action shortcuts
+            if (!e.ctrlKey && !e.metaKey && !e.altKey) {
               const selectedResult = results[selectedIndex];
               const secondaryActions =
                 selectedResult?.actions.filter((a) => !a.primary) || [];
-              const action = secondaryActions.find(
-                (a) => a.shortcut === event.key
-              );
+              const action = secondaryActions.find((a) => a.shortcut === e.key);
 
               if (action && selectedResult) {
-                event.preventDefault();
-                event.stopPropagation();
+                e.preventDefault();
                 onExecuteAction(selectedResult.id, action.id);
                 return true;
               }
             }
-
             return false;
-          },
-        },
-        { stopPropagation: true }
-      )(e),
-    [
-      results,
-      selectedIndex,
-      actionsMenuSelectedIndex,
-      closeActionsMenu,
-      onExecuteAction,
-      navigateSelection,
-    ]
-  );
+        }
+      }
 
-  // Handle main navigation keyboard events
-  const handleMainNavigation = useCallback(
-    (e: React.KeyboardEvent) =>
-      createKeyboardNavigator({
-        [KeyboardShortcuts.CLOSE]: () => onClose(),
-        [KeyboardShortcuts.CONFIRM]: () => handleSelectResult(selectedIndex),
-        [KeyboardShortcuts.NAVIGATE_UP]: () => navigateSelection('up'),
-        [KeyboardShortcuts.NAVIGATE_DOWN]: () => navigateSelection('down'),
+      // Handle main navigation
+      switch (e.key) {
+        case 'Escape':
+          e.preventDefault();
+          onClose();
+          return true;
 
-        default: (event: React.KeyboardEvent) => {
-          // Toggle actions menu (Cmd/Ctrl + K)
-          if (
-            (event.metaKey || event.ctrlKey) &&
-            KeyboardShortcuts.TOGGLE_ACTIONS_MENU.includes(
-              event.key as 'k' | 'K'
-            )
-          ) {
-            event.preventDefault();
-            event.stopPropagation();
-            toggleActionsMenu();
+        case 'Enter':
+          e.preventDefault();
+          handleSelectResult(selectedIndex);
+          return true;
+
+        case 'ArrowUp':
+          e.preventDefault();
+          navigateSelection('up');
+          return true;
+
+        case 'ArrowDown':
+          e.preventDefault();
+          navigateSelection('down');
+          return true;
+
+        default: {
+          // Handle Cmd/Ctrl+K for actions menu
+          if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+            e.preventDefault();
+            onToggleActionsMenu();
             return true;
           }
 
           // Handle Emacs navigation
           const emacsResult = handleEmacsNavigation(
-            event,
+            e,
             selectedIndex,
             results.length
           );
           if (emacsResult.handled) {
-            event.preventDefault();
+            e.preventDefault();
             if (emacsResult.newIndex !== undefined) {
               onSelectIndex(emacsResult.newIndex);
             }
@@ -226,36 +216,60 @@ export default function useKeyboardNavigation({
           }
 
           return false;
-        },
-      })(e),
+        }
+      }
+    },
     [
-      onClose,
+      isActionsMenuOpen,
+      results,
       selectedIndex,
-      handleSelectResult,
+      actionsMenuSelectedIndex,
+      onCloseActionsMenu,
+      onExecuteAction,
       navigateSelection,
-      toggleActionsMenu,
-      results.length,
+      onClose,
+      handleSelectResult,
+      onToggleActionsMenu,
       onSelectIndex,
     ]
   );
 
-  // Main keyboard event handler
-  const handleKeyDown = useCallback(
+  // Handle container-level keyboard events
+  const handleContainerKeyDown = useCallback(
     (e: React.KeyboardEvent): boolean => {
-      // Always stop propagation to prevent triggering page shortcuts
-      e.stopPropagation();
-
-      // Handle actions menu navigation first if it's open
-      if (isActionsMenuOpen) {
-        const handled = handleActionsMenuNavigation(e);
-        if (handled) return true;
+      if (e.key === 'Escape') {
+        onClose();
+        return true;
       }
 
-      // Otherwise handle main navigation
-      return handleMainNavigation(e);
+      const handled = handleKeyDown(e);
+
+      if (!handled && isTextInputKey(e)) {
+        const focused = focusInputIfNeeded(inputRef);
+        if (focused) {
+          return false; // Let input handle the key naturally
+        }
+      }
+
+      return handled;
     },
-    [isActionsMenuOpen, handleActionsMenuNavigation, handleMainNavigation]
+    [handleKeyDown, onClose, inputRef]
   );
 
-  return { handleKeyDown };
+  // Handle search input specific keyboard events
+  const handleSearchInputKeyDown = useCallback(
+    (e: React.KeyboardEvent): boolean => {
+      if (isNavigationKey(e)) {
+        return handleKeyDown(e);
+      }
+      return false; // Let other keys pass through naturally
+    },
+    [handleKeyDown]
+  );
+
+  return {
+    handleKeyDown,
+    handleContainerKeyDown,
+    handleSearchInputKeyDown,
+  };
 }

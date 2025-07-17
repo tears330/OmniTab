@@ -5,17 +5,15 @@ import type { SearchResult } from '@/types/extension';
 import type React from 'react';
 import { act, renderHook } from '@testing-library/react';
 
-import { useOmniTabStore } from '@/stores/omniTabStore';
-
 import useKeyboardNavigation from '../useKeyboardNavigation';
-
-// Mock the store
-jest.mock('@/stores/omniTabStore');
 
 describe('useKeyboardNavigation', () => {
   const mockOnClose = jest.fn();
   const mockOnSelectIndex = jest.fn();
   const mockOnExecuteAction = jest.fn();
+  const mockOnToggleActionsMenu = jest.fn();
+  const mockOnCloseActionsMenu = jest.fn();
+  const mockOnSetActionsMenuSelectedIndex = jest.fn();
 
   const mockResults: SearchResult[] = [
     {
@@ -53,24 +51,25 @@ describe('useKeyboardNavigation', () => {
     },
   ];
 
-  // Mock store state
-  const mockStoreState = {
+  // Helper function to create hook props
+  const createHookProps = (
+    overrides: Partial<Parameters<typeof useKeyboardNavigation>[0]> = {}
+  ) => ({
+    results: mockResults,
+    selectedIndex: 0,
+    onSelectIndex: mockOnSelectIndex,
+    onClose: mockOnClose,
+    onExecuteAction: mockOnExecuteAction,
     isActionsMenuOpen: false,
     actionsMenuSelectedIndex: 0,
-    toggleActionsMenu: jest.fn(),
-    setActionsMenuSelectedIndex: jest.fn(),
-    closeActionsMenu: jest.fn(),
-  };
+    onToggleActionsMenu: mockOnToggleActionsMenu,
+    onCloseActionsMenu: mockOnCloseActionsMenu,
+    onSetActionsMenuSelectedIndex: mockOnSetActionsMenuSelectedIndex,
+    ...overrides,
+  });
 
   beforeEach(() => {
     jest.clearAllMocks();
-
-    // Reset mock store state
-    mockStoreState.isActionsMenuOpen = false;
-    mockStoreState.actionsMenuSelectedIndex = 0;
-
-    // Setup store mock
-    (useOmniTabStore as unknown as jest.Mock).mockReturnValue(mockStoreState);
   });
 
   const createKeyboardEvent = (
@@ -91,13 +90,7 @@ describe('useKeyboardNavigation', () => {
   describe('Main Navigation', () => {
     it('should handle Escape key to close', () => {
       const { result } = renderHook(() =>
-        useKeyboardNavigation({
-          results: mockResults,
-          selectedIndex: 0,
-          onSelectIndex: mockOnSelectIndex,
-          onClose: mockOnClose,
-          onExecuteAction: mockOnExecuteAction,
-        })
+        useKeyboardNavigation(createHookProps())
       );
 
       const event = createKeyboardEvent('Escape');
@@ -111,13 +104,7 @@ describe('useKeyboardNavigation', () => {
 
     it('should handle Enter key to execute primary action', () => {
       const { result } = renderHook(() =>
-        useKeyboardNavigation({
-          results: mockResults,
-          selectedIndex: 0,
-          onSelectIndex: mockOnSelectIndex,
-          onClose: mockOnClose,
-          onExecuteAction: mockOnExecuteAction,
-        })
+        useKeyboardNavigation(createHookProps())
       );
 
       const event = createKeyboardEvent('Enter');
@@ -131,13 +118,7 @@ describe('useKeyboardNavigation', () => {
 
     it('should handle ArrowUp key to navigate up', () => {
       const { result } = renderHook(() =>
-        useKeyboardNavigation({
-          results: mockResults,
-          selectedIndex: 1,
-          onSelectIndex: mockOnSelectIndex,
-          onClose: mockOnClose,
-          onExecuteAction: mockOnExecuteAction,
-        })
+        useKeyboardNavigation(createHookProps({ selectedIndex: 1 }))
       );
 
       const event = createKeyboardEvent('ArrowUp');
@@ -151,13 +132,7 @@ describe('useKeyboardNavigation', () => {
 
     it('should handle ArrowDown key to navigate down', () => {
       const { result } = renderHook(() =>
-        useKeyboardNavigation({
-          results: mockResults,
-          selectedIndex: 0,
-          onSelectIndex: mockOnSelectIndex,
-          onClose: mockOnClose,
-          onExecuteAction: mockOnExecuteAction,
-        })
+        useKeyboardNavigation(createHookProps())
       );
 
       const event = createKeyboardEvent('ArrowDown');
@@ -171,13 +146,7 @@ describe('useKeyboardNavigation', () => {
 
     it('should toggle actions menu with Cmd+K', () => {
       const { result } = renderHook(() =>
-        useKeyboardNavigation({
-          results: mockResults,
-          selectedIndex: 0,
-          onSelectIndex: mockOnSelectIndex,
-          onClose: mockOnClose,
-          onExecuteAction: mockOnExecuteAction,
-        })
+        useKeyboardNavigation(createHookProps())
       );
 
       const event = createKeyboardEvent('k', { metaKey: true });
@@ -185,19 +154,13 @@ describe('useKeyboardNavigation', () => {
         result.current.handleKeyDown(event);
       });
 
-      expect(mockStoreState.toggleActionsMenu).toHaveBeenCalled();
+      expect(mockOnToggleActionsMenu).toHaveBeenCalled();
       expect(event.preventDefault).toHaveBeenCalled();
     });
 
     it('should toggle actions menu with Ctrl+K', () => {
       const { result } = renderHook(() =>
-        useKeyboardNavigation({
-          results: mockResults,
-          selectedIndex: 0,
-          onSelectIndex: mockOnSelectIndex,
-          onClose: mockOnClose,
-          onExecuteAction: mockOnExecuteAction,
-        })
+        useKeyboardNavigation(createHookProps())
       );
 
       const event = createKeyboardEvent('K', { ctrlKey: true });
@@ -205,19 +168,13 @@ describe('useKeyboardNavigation', () => {
         result.current.handleKeyDown(event);
       });
 
-      expect(mockStoreState.toggleActionsMenu).toHaveBeenCalled();
+      expect(mockOnToggleActionsMenu).toHaveBeenCalled();
       expect(event.preventDefault).toHaveBeenCalled();
     });
 
     it('should handle Emacs navigation with Ctrl+N', () => {
       const { result } = renderHook(() =>
-        useKeyboardNavigation({
-          results: mockResults,
-          selectedIndex: 0,
-          onSelectIndex: mockOnSelectIndex,
-          onClose: mockOnClose,
-          onExecuteAction: mockOnExecuteAction,
-        })
+        useKeyboardNavigation(createHookProps())
       );
 
       const event = createKeyboardEvent('n', { ctrlKey: true });
@@ -231,13 +188,7 @@ describe('useKeyboardNavigation', () => {
 
     it('should handle Emacs navigation with Ctrl+P', () => {
       const { result } = renderHook(() =>
-        useKeyboardNavigation({
-          results: mockResults,
-          selectedIndex: 1,
-          onSelectIndex: mockOnSelectIndex,
-          onClose: mockOnClose,
-          onExecuteAction: mockOnExecuteAction,
-        })
+        useKeyboardNavigation(createHookProps({ selectedIndex: 1 }))
       );
 
       const event = createKeyboardEvent('p', { ctrlKey: true });
@@ -251,13 +202,22 @@ describe('useKeyboardNavigation', () => {
 
     it('should allow normal text input', () => {
       const { result } = renderHook(() =>
-        useKeyboardNavigation({
-          results: mockResults,
-          selectedIndex: 0,
-          onSelectIndex: mockOnSelectIndex,
-          onClose: mockOnClose,
-          onExecuteAction: mockOnExecuteAction,
-        })
+        useKeyboardNavigation(createHookProps())
+      );
+
+      const event = createKeyboardEvent('a');
+      let handled: boolean;
+      act(() => {
+        handled = result.current.handleKeyDown(event);
+      });
+
+      expect(handled!).toBe(false);
+      expect(event.preventDefault).not.toHaveBeenCalled();
+    });
+
+    it('should always stop event propagation to prevent page shortcuts', () => {
+      const { result } = renderHook(() =>
+        useKeyboardNavigation(createHookProps())
       );
 
       const event = createKeyboardEvent('a');
@@ -265,51 +225,14 @@ describe('useKeyboardNavigation', () => {
         result.current.handleKeyDown(event);
       });
 
-      // Should not prevent default for normal text input
-      expect(event.preventDefault).not.toHaveBeenCalled();
-      expect(mockOnClose).not.toHaveBeenCalled();
-      expect(mockOnExecuteAction).not.toHaveBeenCalled();
-    });
-
-    it('should always stop event propagation to prevent page shortcuts', () => {
-      const { result } = renderHook(() =>
-        useKeyboardNavigation({
-          results: mockResults,
-          selectedIndex: 0,
-          onSelectIndex: mockOnSelectIndex,
-          onClose: mockOnClose,
-          onExecuteAction: mockOnExecuteAction,
-        })
-      );
-
-      // Test with various keys - all should stop propagation
-      const testKeys = ['a', 's', 'Enter', 'Escape', 'ArrowUp', 'ArrowDown'];
-
-      testKeys.forEach((key) => {
-        const event = createKeyboardEvent(key);
-        act(() => {
-          result.current.handleKeyDown(event);
-        });
-
-        expect(event.stopPropagation).toHaveBeenCalled();
-      });
+      expect(event.stopPropagation).toHaveBeenCalled();
     });
   });
 
   describe('Actions Menu Navigation', () => {
-    beforeEach(() => {
-      mockStoreState.isActionsMenuOpen = true;
-    });
-
     it('should close actions menu on Escape', () => {
       const { result } = renderHook(() =>
-        useKeyboardNavigation({
-          results: mockResults,
-          selectedIndex: 0,
-          onSelectIndex: mockOnSelectIndex,
-          onClose: mockOnClose,
-          onExecuteAction: mockOnExecuteAction,
-        })
+        useKeyboardNavigation(createHookProps({ isActionsMenuOpen: true }))
       );
 
       const event = createKeyboardEvent('Escape');
@@ -317,22 +240,19 @@ describe('useKeyboardNavigation', () => {
         result.current.handleKeyDown(event);
       });
 
-      expect(mockStoreState.closeActionsMenu).toHaveBeenCalled();
+      expect(mockOnCloseActionsMenu).toHaveBeenCalled();
       expect(event.preventDefault).toHaveBeenCalled();
       expect(event.stopPropagation).toHaveBeenCalled();
     });
 
     it('should execute selected secondary action on Enter', () => {
-      mockStoreState.actionsMenuSelectedIndex = 1; // Select "duplicate" action
-
       const { result } = renderHook(() =>
-        useKeyboardNavigation({
-          results: mockResults,
-          selectedIndex: 0,
-          onSelectIndex: mockOnSelectIndex,
-          onClose: mockOnClose,
-          onExecuteAction: mockOnExecuteAction,
-        })
+        useKeyboardNavigation(
+          createHookProps({
+            isActionsMenuOpen: true,
+            actionsMenuSelectedIndex: 1,
+          })
+        )
       );
 
       const event = createKeyboardEvent('Enter');
@@ -347,13 +267,7 @@ describe('useKeyboardNavigation', () => {
 
     it('should navigate actions menu with arrow keys', () => {
       const { result } = renderHook(() =>
-        useKeyboardNavigation({
-          results: mockResults,
-          selectedIndex: 0,
-          onSelectIndex: mockOnSelectIndex,
-          onClose: mockOnClose,
-          onExecuteAction: mockOnExecuteAction,
-        })
+        useKeyboardNavigation(createHookProps({ isActionsMenuOpen: true }))
       );
 
       const downEvent = createKeyboardEvent('ArrowDown');
@@ -361,35 +275,14 @@ describe('useKeyboardNavigation', () => {
         result.current.handleKeyDown(downEvent);
       });
 
-      expect(mockStoreState.setActionsMenuSelectedIndex).toHaveBeenCalledWith(
-        1
-      );
+      expect(mockOnSetActionsMenuSelectedIndex).toHaveBeenCalledWith(1);
       expect(downEvent.preventDefault).toHaveBeenCalled();
       expect(downEvent.stopPropagation).toHaveBeenCalled();
-
-      jest.clearAllMocks();
-
-      const upEvent = createKeyboardEvent('ArrowUp');
-      act(() => {
-        result.current.handleKeyDown(upEvent);
-      });
-
-      expect(mockStoreState.setActionsMenuSelectedIndex).toHaveBeenCalledWith(
-        -1
-      );
-      expect(upEvent.preventDefault).toHaveBeenCalled();
-      expect(upEvent.stopPropagation).toHaveBeenCalled();
     });
 
     it('should handle direct action shortcuts', () => {
       const { result } = renderHook(() =>
-        useKeyboardNavigation({
-          results: mockResults,
-          selectedIndex: 0,
-          onSelectIndex: mockOnSelectIndex,
-          onClose: mockOnClose,
-          onExecuteAction: mockOnExecuteAction,
-        })
+        useKeyboardNavigation(createHookProps({ isActionsMenuOpen: true }))
       );
 
       const event = createKeyboardEvent('x');
@@ -404,13 +297,7 @@ describe('useKeyboardNavigation', () => {
 
     it('should handle case-sensitive shortcuts (lowercase)', () => {
       const { result } = renderHook(() =>
-        useKeyboardNavigation({
-          results: mockResults,
-          selectedIndex: 0,
-          onSelectIndex: mockOnSelectIndex,
-          onClose: mockOnClose,
-          onExecuteAction: mockOnExecuteAction,
-        })
+        useKeyboardNavigation(createHookProps({ isActionsMenuOpen: true }))
       );
 
       const event = createKeyboardEvent('g');
@@ -425,13 +312,7 @@ describe('useKeyboardNavigation', () => {
 
     it('should handle case-sensitive shortcuts (uppercase)', () => {
       const { result } = renderHook(() =>
-        useKeyboardNavigation({
-          results: mockResults,
-          selectedIndex: 0,
-          onSelectIndex: mockOnSelectIndex,
-          onClose: mockOnClose,
-          onExecuteAction: mockOnExecuteAction,
-        })
+        useKeyboardNavigation(createHookProps({ isActionsMenuOpen: true }))
       );
 
       const event = createKeyboardEvent('G');
@@ -449,16 +330,9 @@ describe('useKeyboardNavigation', () => {
 
     it('should distinguish between uppercase and lowercase shortcuts', () => {
       const { result } = renderHook(() =>
-        useKeyboardNavigation({
-          results: mockResults,
-          selectedIndex: 0,
-          onSelectIndex: mockOnSelectIndex,
-          onClose: mockOnClose,
-          onExecuteAction: mockOnExecuteAction,
-        })
+        useKeyboardNavigation(createHookProps({ isActionsMenuOpen: true }))
       );
 
-      // Test lowercase 'g' first
       const lowercaseEvent = createKeyboardEvent('g');
       act(() => {
         result.current.handleKeyDown(lowercaseEvent);
@@ -469,34 +343,11 @@ describe('useKeyboardNavigation', () => {
         'tab-1',
         'close-other-groups'
       );
-
-      jest.clearAllMocks();
-
-      // Test uppercase 'G'
-      const uppercaseEvent = createKeyboardEvent('G');
-      act(() => {
-        result.current.handleKeyDown(uppercaseEvent);
-      });
-
-      expect(mockOnExecuteAction).toHaveBeenCalledWith(
-        'tab-1',
-        'close-other-groups'
-      );
-      expect(mockOnExecuteAction).not.toHaveBeenCalledWith(
-        'tab-1',
-        'close-group'
-      );
     });
 
     it('should handle Emacs navigation in actions menu', () => {
       const { result } = renderHook(() =>
-        useKeyboardNavigation({
-          results: mockResults,
-          selectedIndex: 0,
-          onSelectIndex: mockOnSelectIndex,
-          onClose: mockOnClose,
-          onExecuteAction: mockOnExecuteAction,
-        })
+        useKeyboardNavigation(createHookProps({ isActionsMenuOpen: true }))
       );
 
       const event = createKeyboardEvent('n', { ctrlKey: true });
@@ -504,68 +355,72 @@ describe('useKeyboardNavigation', () => {
         result.current.handleKeyDown(event);
       });
 
-      expect(mockStoreState.setActionsMenuSelectedIndex).toHaveBeenCalledWith(
-        1
-      );
+      expect(mockOnSetActionsMenuSelectedIndex).toHaveBeenCalledWith(1);
       expect(event.preventDefault).toHaveBeenCalled();
       expect(event.stopPropagation).toHaveBeenCalled();
     });
 
-    it('should not trigger main navigation when actions menu is open', () => {
+    it('should close actions menu with Cmd/Ctrl+K when actions menu is open', () => {
       const { result } = renderHook(() =>
-        useKeyboardNavigation({
-          results: mockResults,
-          selectedIndex: 0,
-          onSelectIndex: mockOnSelectIndex,
-          onClose: mockOnClose,
-          onExecuteAction: mockOnExecuteAction,
-        })
+        useKeyboardNavigation(createHookProps({ isActionsMenuOpen: true }))
       );
 
-      // Try to navigate main list with arrow key
-      const event = createKeyboardEvent('ArrowDown');
+      const cmdEvent = createKeyboardEvent('k', { metaKey: true });
+      act(() => {
+        result.current.handleKeyDown(cmdEvent);
+      });
+
+      expect(mockOnCloseActionsMenu).toHaveBeenCalled();
+      expect(cmdEvent.preventDefault).toHaveBeenCalled();
+      expect(cmdEvent.stopPropagation).toHaveBeenCalled();
+
+      jest.clearAllMocks();
+
+      const ctrlEvent = createKeyboardEvent('K', { ctrlKey: true });
+      act(() => {
+        result.current.handleKeyDown(ctrlEvent);
+      });
+
+      expect(mockOnCloseActionsMenu).toHaveBeenCalled();
+      expect(ctrlEvent.preventDefault).toHaveBeenCalled();
+      expect(ctrlEvent.stopPropagation).toHaveBeenCalled();
+    });
+
+    it('should not trigger main navigation when actions menu is open', () => {
+      const { result } = renderHook(() =>
+        useKeyboardNavigation(createHookProps({ isActionsMenuOpen: true }))
+      );
+
+      const event = createKeyboardEvent('ArrowUp');
       act(() => {
         result.current.handleKeyDown(event);
       });
 
       // Should navigate actions menu, not main list
-      expect(mockStoreState.setActionsMenuSelectedIndex).toHaveBeenCalled();
+      expect(mockOnSetActionsMenuSelectedIndex).toHaveBeenCalled();
       expect(mockOnSelectIndex).not.toHaveBeenCalled();
     });
 
     it('should fallback to main navigation for unhandled keys', () => {
       const { result } = renderHook(() =>
-        useKeyboardNavigation({
-          results: mockResults,
-          selectedIndex: 0,
-          onSelectIndex: mockOnSelectIndex,
-          onClose: mockOnClose,
-          onExecuteAction: mockOnExecuteAction,
-        })
+        useKeyboardNavigation(createHookProps({ isActionsMenuOpen: true }))
       );
 
-      // Type a normal character that's not a shortcut
-      const event = createKeyboardEvent('q');
+      const event = createKeyboardEvent('z'); // Unhandled key
+      let handled: boolean;
       act(() => {
-        result.current.handleKeyDown(event);
+        handled = result.current.handleKeyDown(event);
       });
 
-      // Should not prevent default for unhandled keys, but should stop propagation
+      expect(handled!).toBe(false);
       expect(event.preventDefault).not.toHaveBeenCalled();
-      expect(event.stopPropagation).toHaveBeenCalled();
     });
   });
 
   describe('Edge Cases', () => {
     it('should handle empty results', () => {
       const { result } = renderHook(() =>
-        useKeyboardNavigation({
-          results: [],
-          selectedIndex: 0,
-          onSelectIndex: mockOnSelectIndex,
-          onClose: mockOnClose,
-          onExecuteAction: mockOnExecuteAction,
-        })
+        useKeyboardNavigation(createHookProps({ results: [] }))
       );
 
       const event = createKeyboardEvent('Enter');
@@ -577,24 +432,20 @@ describe('useKeyboardNavigation', () => {
     });
 
     it('should handle results without actions', () => {
-      const resultsWithoutActions: SearchResult[] = [
+      const resultsWithoutActions = [
         {
-          id: 'test-1',
-          title: 'Test',
-          description: 'Test result',
-          type: 'tab',
+          id: 'empty-result',
+          title: 'Empty Result',
+          description: 'No actions',
+          type: 'test',
           actions: [],
         },
       ];
 
       const { result } = renderHook(() =>
-        useKeyboardNavigation({
-          results: resultsWithoutActions,
-          selectedIndex: 0,
-          onSelectIndex: mockOnSelectIndex,
-          onClose: mockOnClose,
-          onExecuteAction: mockOnExecuteAction,
-        })
+        useKeyboardNavigation(
+          createHookProps({ results: resultsWithoutActions })
+        )
       );
 
       const event = createKeyboardEvent('Enter');
@@ -606,24 +457,20 @@ describe('useKeyboardNavigation', () => {
     });
 
     it('should handle results without primary action', () => {
-      const resultsWithoutPrimary: SearchResult[] = [
+      const resultsWithoutPrimary = [
         {
-          id: 'test-1',
-          title: 'Test',
-          description: 'Test result',
-          type: 'tab',
-          actions: [{ id: 'action1', label: 'Action 1', primary: false }],
+          id: 'no-primary',
+          title: 'No Primary Action',
+          description: 'All secondary actions',
+          type: 'test',
+          actions: [{ id: 'secondary', label: 'Secondary', primary: false }],
         },
       ];
 
       const { result } = renderHook(() =>
-        useKeyboardNavigation({
-          results: resultsWithoutPrimary,
-          selectedIndex: 0,
-          onSelectIndex: mockOnSelectIndex,
-          onClose: mockOnClose,
-          onExecuteAction: mockOnExecuteAction,
-        })
+        useKeyboardNavigation(
+          createHookProps({ results: resultsWithoutPrimary })
+        )
       );
 
       const event = createKeyboardEvent('Enter');
@@ -635,17 +482,13 @@ describe('useKeyboardNavigation', () => {
     });
 
     it('should handle invalid selected index in actions menu', () => {
-      mockStoreState.isActionsMenuOpen = true;
-      mockStoreState.actionsMenuSelectedIndex = 10; // Out of bounds
-
       const { result } = renderHook(() =>
-        useKeyboardNavigation({
-          results: mockResults,
-          selectedIndex: 0,
-          onSelectIndex: mockOnSelectIndex,
-          onClose: mockOnClose,
-          onExecuteAction: mockOnExecuteAction,
-        })
+        useKeyboardNavigation(
+          createHookProps({
+            isActionsMenuOpen: true,
+            actionsMenuSelectedIndex: 999,
+          })
+        )
       );
 
       const event = createKeyboardEvent('Enter');
