@@ -167,7 +167,7 @@ describe('History Extension Search', () => {
           {
             id: HistoryActionId.REMOVE,
             label: HistoryActionLabel.REMOVE_FROM_HISTORY,
-            shortcut: HistoryActionShortcut.CTRL_ENTER,
+            shortcut: HistoryActionShortcut.REMOVE,
           },
         ],
         metadata: {

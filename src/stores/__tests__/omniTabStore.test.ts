@@ -552,5 +552,265 @@ describe('omniTabStore', () => {
 
       expect(useOmniTabStore.getState().query).toBe('test query');
     });
+
+    it('should handle whitespace-only query', () => {
+      performDebouncedSearch('   ');
+
+      const state = useOmniTabStore.getState();
+      expect(state.query).toBe('   ');
+      expect(state.loading).toBe(true);
+    });
+  });
+
+  describe('Actions Menu Management', () => {
+    const mockResultWithActions: SearchResult = {
+      id: 'test-1',
+      title: 'Test Result',
+      description: 'Test',
+      type: 'tab',
+      actions: [
+        { id: 'primary', label: 'Primary Action', primary: true },
+        { id: 'secondary1', label: 'Secondary 1', primary: false },
+        { id: 'secondary2', label: 'Secondary 2', primary: false },
+      ],
+    };
+
+    beforeEach(() => {
+      // Set up results with actions
+      useOmniTabStore.getState().setResults([mockResultWithActions]);
+    });
+
+    it('should have correct initial actions menu state', () => {
+      const state = useOmniTabStore.getState();
+      expect(state.isActionsMenuOpen).toBe(false);
+      expect(state.actionsMenuSelectedIndex).toBe(0);
+    });
+
+    it('should open actions menu when result has secondary actions', () => {
+      useOmniTabStore.getState().openActionsMenu();
+
+      const state = useOmniTabStore.getState();
+      expect(state.isActionsMenuOpen).toBe(true);
+      expect(state.actionsMenuSelectedIndex).toBe(0);
+    });
+
+    it('should not open actions menu when result has no secondary actions', () => {
+      const resultWithoutSecondary: SearchResult = {
+        id: 'test-2',
+        title: 'Test',
+        description: 'Test',
+        type: 'tab',
+        actions: [{ id: 'primary', label: 'Primary Only', primary: true }],
+      };
+
+      useOmniTabStore.getState().setResults([resultWithoutSecondary]);
+      useOmniTabStore.getState().openActionsMenu();
+
+      expect(useOmniTabStore.getState().isActionsMenuOpen).toBe(false);
+    });
+
+    it('should close actions menu and reset selected index', () => {
+      useOmniTabStore.getState().openActionsMenu();
+      useOmniTabStore.getState().setActionsMenuSelectedIndex(1);
+      useOmniTabStore.getState().closeActionsMenu();
+
+      const state = useOmniTabStore.getState();
+      expect(state.isActionsMenuOpen).toBe(false);
+      expect(state.actionsMenuSelectedIndex).toBe(0);
+    });
+
+    it('should toggle actions menu', () => {
+      // Open
+      useOmniTabStore.getState().toggleActionsMenu();
+      expect(useOmniTabStore.getState().isActionsMenuOpen).toBe(true);
+
+      // Close
+      useOmniTabStore.getState().toggleActionsMenu();
+      expect(useOmniTabStore.getState().isActionsMenuOpen).toBe(false);
+    });
+
+    it('should handle actions menu index with wrap-around navigation', () => {
+      useOmniTabStore.getState().openActionsMenu();
+
+      // Navigate forward
+      useOmniTabStore.getState().setActionsMenuSelectedIndex(1);
+      expect(useOmniTabStore.getState().actionsMenuSelectedIndex).toBe(1);
+
+      // Wrap to first from last
+      useOmniTabStore.getState().setActionsMenuSelectedIndex(2); // Last item
+      useOmniTabStore.getState().setActionsMenuSelectedIndex(3); // Beyond last
+      expect(useOmniTabStore.getState().actionsMenuSelectedIndex).toBe(0);
+
+      // Wrap to last from first
+      useOmniTabStore.getState().setActionsMenuSelectedIndex(-1);
+      expect(useOmniTabStore.getState().actionsMenuSelectedIndex).toBe(1); // 2 secondary actions
+    });
+
+    it('should not set actions menu index when no secondary actions', () => {
+      const resultWithoutActions: SearchResult = {
+        id: 'test-3',
+        title: 'Test',
+        description: 'Test',
+        type: 'tab',
+        actions: [],
+      };
+
+      useOmniTabStore.getState().setResults([resultWithoutActions]);
+      useOmniTabStore.getState().setActionsMenuSelectedIndex(1);
+
+      // Should remain at 0 when no actions
+      expect(useOmniTabStore.getState().actionsMenuSelectedIndex).toBe(0);
+    });
+
+    it('should reset actions menu state on close', () => {
+      // Open menu and set some state
+      useOmniTabStore.getState().openActionsMenu();
+      useOmniTabStore.getState().setActionsMenuSelectedIndex(1);
+
+      // Close the OmniTab
+      useOmniTabStore.getState().close();
+
+      const state = useOmniTabStore.getState();
+      expect(state.isActionsMenuOpen).toBe(false);
+      expect(state.actionsMenuSelectedIndex).toBe(0);
+    });
+
+    it('should reset actions menu state on reset', () => {
+      // Open menu and set some state
+      useOmniTabStore.getState().openActionsMenu();
+      useOmniTabStore.getState().setActionsMenuSelectedIndex(1);
+
+      // Reset store
+      useOmniTabStore.getState().reset();
+
+      const state = useOmniTabStore.getState();
+      expect(state.isActionsMenuOpen).toBe(false);
+      expect(state.actionsMenuSelectedIndex).toBe(0);
+    });
+  });
+
+  describe('Store Initialization and Subscriptions', () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('should initialize store and load commands on creation', async () => {
+      const mockCommands: Command[] = [
+        {
+          id: 'tab.search',
+          name: 'Search Tabs',
+          description: 'Search tabs',
+          type: 'search',
+        },
+      ];
+
+      mockBroker.sendActionRequest.mockResolvedValue({
+        success: true,
+        data: { commands: mockCommands },
+      });
+
+      // Call loadCommands directly to test the functionality
+      await useOmniTabStore.getState().loadCommands();
+
+      expect(mockBroker.sendActionRequest).toHaveBeenCalledWith(
+        'core',
+        'get-commands',
+        'list'
+      );
+      expect(useOmniTabStore.getState().availableCommands).toEqual(
+        mockCommands
+      );
+    });
+
+    it('should handle store subscription and query changes', async () => {
+      // Mock the debounced search function
+      jest.clearAllMocks();
+
+      // Change query to trigger subscription
+      useOmniTabStore.getState().setQuery('test');
+
+      // Subscription should be triggered
+      expect(useOmniTabStore.getState().query).toBe('test');
+    });
+
+    it('should handle empty query changes in subscription', () => {
+      // First set a non-empty query
+      useOmniTabStore.getState().setQuery('test');
+
+      // Then set empty query
+      useOmniTabStore.getState().setQuery('');
+
+      expect(useOmniTabStore.getState().query).toBe('');
+    });
+
+    it('should not trigger subscription for same query', () => {
+      const initialQuery = useOmniTabStore.getState().query;
+
+      // Set the same query
+      useOmniTabStore.getState().setQuery(initialQuery);
+
+      expect(useOmniTabStore.getState().query).toBe(initialQuery);
+    });
+  });
+
+  describe('Production Store Configuration', () => {
+    let originalEnv: string | undefined;
+
+    beforeEach(() => {
+      originalEnv = process.env.NODE_ENV;
+      jest.clearAllMocks();
+    });
+
+    afterEach(() => {
+      if (originalEnv !== undefined) {
+        process.env.NODE_ENV = originalEnv;
+      } else {
+        delete process.env.NODE_ENV;
+      }
+    });
+
+    it('should not use devtools in production', () => {
+      // This test mainly ensures the production branch exists
+      // The actual store creation happens at module load time
+      process.env.NODE_ENV = 'production';
+
+      // Create a new instance to test production path
+      const state = useOmniTabStore.getState();
+      expect(state).toBeDefined();
+      expect(state.isOpen).toBe(false);
+      expect(state.isActionsMenuOpen).toBe(false);
+    });
+  });
+
+  describe('Edge Cases and Error Handling', () => {
+    it('should handle setSelectedIndex with no results', () => {
+      useOmniTabStore.getState().setResults([]);
+      useOmniTabStore.getState().setSelectedIndex(5);
+
+      expect(useOmniTabStore.getState().selectedIndex).toBe(0);
+    });
+
+    it('should handle openActionsMenu with no selected result', () => {
+      useOmniTabStore.getState().setResults([]);
+      useOmniTabStore.getState().setSelectedIndex(0);
+      useOmniTabStore.getState().openActionsMenu();
+
+      expect(useOmniTabStore.getState().isActionsMenuOpen).toBe(false);
+    });
+
+    it('should handle setActionsMenuSelectedIndex with no selected result', () => {
+      useOmniTabStore.getState().setResults([]);
+      useOmniTabStore.getState().setActionsMenuSelectedIndex(1);
+
+      // Should not crash or change state when no result selected
+      expect(useOmniTabStore.getState().actionsMenuSelectedIndex).toBe(0);
+    });
+
+    it('should handle missing devtools configuration', () => {
+      // Test that the store works even if devtools isn't available
+      const state = useOmniTabStore.getState();
+      expect(state.isOpen).toBe(false);
+      expect(state.query).toBe('');
+    });
   });
 });

@@ -179,7 +179,37 @@ describe('Tab Extension Search', () => {
           {
             id: TabActionId.CLOSE,
             label: TabActionLabel.CLOSE_TAB,
-            shortcut: TabActionShortcut.CTRL_ENTER,
+            shortcut: TabActionShortcut.CLOSE,
+          },
+          {
+            id: TabActionId.MUTE,
+            label: TabActionLabel.MUTE_TAB,
+            shortcut: TabActionShortcut.MUTE,
+          },
+          {
+            id: TabActionId.PIN,
+            label: TabActionLabel.PIN_TAB,
+            shortcut: TabActionShortcut.PIN,
+          },
+          {
+            id: TabActionId.CLOSE_OTHERS,
+            label: TabActionLabel.CLOSE_OTHER_TABS,
+            shortcut: TabActionShortcut.CLOSE_OTHERS,
+          },
+          {
+            id: TabActionId.CLOSE_GROUP,
+            label: TabActionLabel.CLOSE_GROUP,
+            shortcut: TabActionShortcut.CLOSE_GROUP,
+          },
+          {
+            id: TabActionId.CLOSE_OTHER_GROUPS,
+            label: TabActionLabel.CLOSE_OTHER_GROUPS,
+            shortcut: TabActionShortcut.CLOSE_OTHER_GROUPS,
+          },
+          {
+            id: TabActionId.BOOKMARK,
+            label: TabActionLabel.BOOKMARK_TAB,
+            shortcut: TabActionShortcut.BOOKMARK,
           },
         ],
         metadata: {
@@ -189,6 +219,7 @@ describe('Tab Extension Search', () => {
           audible: false,
           incognito: false,
           url: 'https://example.com/page',
+          muted: false,
         },
       });
     });
@@ -268,6 +299,7 @@ describe('Tab Extension Search', () => {
         audible: true,
         incognito: true,
         url: 'https://test.com',
+        muted: false,
       });
     });
   });

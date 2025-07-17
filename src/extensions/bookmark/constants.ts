@@ -34,8 +34,8 @@ export enum BookmarkActionLabel {
 
 export enum BookmarkActionShortcut {
   ENTER = 'Enter',
-  CTRL_E = 'Ctrl+E',
-  CTRL_ENTER = 'Ctrl+Enter',
+  EDIT = 'e',
+  REMOVE = 'r',
 }
 
 export enum BookmarkResultType {

@@ -280,12 +280,12 @@ describe('Bookmark Extension Search', () => {
           {
             id: BookmarkActionId.EDIT,
             label: BookmarkActionLabel.EDIT_BOOKMARK,
-            shortcut: BookmarkActionShortcut.CTRL_E,
+            shortcut: BookmarkActionShortcut.EDIT,
           },
           {
             id: BookmarkActionId.REMOVE,
             label: BookmarkActionLabel.REMOVE_BOOKMARK,
-            shortcut: BookmarkActionShortcut.CTRL_ENTER,
+            shortcut: BookmarkActionShortcut.REMOVE,
           },
         ],
         metadata: {

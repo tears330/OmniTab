@@ -1,6 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect } from 'react';
 
-import ActionsMenu from '@/components/ActionsMenu';
 import EmptyState from '@/components/EmptyState';
 import ResultsList from '@/components/ResultsList';
 import SearchInput from '@/components/SearchInput';
@@ -16,14 +15,6 @@ interface OmniTabProps {
 function OmniTab({ isOpen, onClose }: OmniTabProps) {
   const store = useOmniTabStore();
   const inputRef = React.useRef<HTMLInputElement>(null);
-  const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
-
-  // Close actions menu when OmniTab closes
-  useEffect(() => {
-    if (!isOpen) {
-      setIsActionsMenuOpen(false);
-    }
-  }, [isOpen]);
 
   // Focus input when opened
   useEffect(() => {
@@ -59,41 +50,61 @@ function OmniTab({ isOpen, onClose }: OmniTabProps) {
     [store]
   );
 
-  // Handle opening actions menu
-  const handleOpenActionsMenu = useCallback(() => {
-    const result = store.results[store.selectedIndex];
-    if (!result) return;
-
-    // Check if there are secondary actions
-    const hasSecondaryActions = result.actions.some((a) => !a.primary);
-    if (hasSecondaryActions) {
-      setIsActionsMenuOpen(true);
-    }
-  }, [store]);
-
-  // Handle closing actions menu
-  const handleCloseActionsMenu = useCallback(() => {
-    setIsActionsMenuOpen(false);
-  }, []);
-
-  // Handle action selection from menu
-  const handleActionMenuSelect = useCallback(
-    (resultId: string, actionId: string) => {
-      store.executeAction(resultId, actionId);
-      setIsActionsMenuOpen(false);
-    },
-    [store]
-  );
-
   // Use keyboard navigation hook
-  const { handleKeyDown } = useKeyboardNavigation({
+  const { handleKeyDown: handleNavigationKeyDown } = useKeyboardNavigation({
     results: store.results,
     selectedIndex: store.selectedIndex,
     onSelectIndex: handleSelectIndex,
     onClose,
     onExecuteAction: store.executeAction,
-    onOpenActionsMenu: handleOpenActionsMenu,
   });
+
+  // Handle keyboard events at the container level
+  const handleContainerKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      // Special handling for Escape key - always close
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
+
+      // Let the navigation handler try to handle the event first
+      const handled = handleNavigationKeyDown(e);
+
+      // If navigation didn't handle it and it's a text input key, focus the input
+      if (
+        !handled &&
+        inputRef.current &&
+        document.activeElement !== inputRef.current
+      ) {
+        // Check if it's a regular text input key (not a navigation key)
+        const isTextInputKey =
+          (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) || // Regular character keys
+          ['Backspace', 'Delete'].includes(e.key);
+
+        if (isTextInputKey) {
+          inputRef.current.focus();
+          // For character keys, we need to manually update the input value
+          if (e.key.length === 1) {
+            const currentValue = store.query;
+            const newValue = currentValue + e.key;
+            handleSearchChange(newValue);
+            e.preventDefault();
+          }
+        }
+      }
+    },
+    [handleNavigationKeyDown, onClose, store.query, handleSearchChange]
+  );
+
+  // Handle search input specific key events
+  const handleSearchInputKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      // Let navigation handle the event
+      handleNavigationKeyDown(e);
+    },
+    [handleNavigationKeyDown]
+  );
 
   if (!isOpen) return null;
 
@@ -102,26 +113,21 @@ function OmniTab({ isOpen, onClose }: OmniTabProps) {
       data-omnitab
       className='fixed inset-0 z-[999999] flex items-start justify-center bg-black/30 backdrop-blur-md dark:bg-black/50'
       onClick={onClose}
-      onKeyDown={(e) => {
-        e.stopPropagation();
-      }}
+      onKeyDown={handleContainerKeyDown}
       role='button'
       tabIndex={0}
     >
       <div
         className='fade-in slide-in-from-top-4 mt-40 w-full max-w-3xl transform animate-in duration-200'
         onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => {
-          e.stopPropagation();
-        }}
         role='presentation'
       >
-        <div className='overflow-hidden rounded-xl bg-white/95 shadow-2xl ring-1 ring-gray-300/50 backdrop-blur-xl dark:bg-gray-900/95 dark:ring-white/10'>
+        <div className='overflow-visible rounded-xl bg-white/95 shadow-2xl ring-1 ring-gray-300/50 backdrop-blur-xl dark:bg-gray-900/95 dark:ring-white/10'>
           <SearchInput
             inputRef={inputRef}
             value={store.query}
             onChange={handleSearchChange}
-            onKeyDown={handleKeyDown}
+            onKeyDown={handleSearchInputKeyDown}
           />
 
           {store.results.length > 0 ? (
@@ -145,13 +151,6 @@ function OmniTab({ isOpen, onClose }: OmniTabProps) {
           />
         </div>
       </div>
-
-      <ActionsMenu
-        isOpen={isActionsMenuOpen}
-        selectedResult={store.results[store.selectedIndex]}
-        onClose={handleCloseActionsMenu}
-        onSelectAction={handleActionMenuSelect}
-      />
     </div>
   );
 }
