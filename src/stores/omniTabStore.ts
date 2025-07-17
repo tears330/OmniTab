@@ -276,7 +276,7 @@ export const useOmniTabStore = create<OmniTabStore>()(
             const { availableCommands, loadInitialResults } = get();
 
             isPerformingDirectSearch = true;
-            set({ query, selectedIndex: 0 }, false, 'performSearch');
+            set({ selectedIndex: 0 }, false, 'performSearch');
 
             try {
               if (!query.trim()) {
