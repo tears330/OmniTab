@@ -32,7 +32,7 @@ export enum HistoryActionLabel {
 
 export enum HistoryActionShortcut {
   ENTER = 'Enter',
-  CTRL_ENTER = 'Ctrl+Enter',
+  REMOVE = 'r',
 }
 
 export enum HistoryResultType {

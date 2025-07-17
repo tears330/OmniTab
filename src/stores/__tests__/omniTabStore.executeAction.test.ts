@@ -469,4 +469,167 @@ describe('omniTabStore - executeAction', () => {
       );
     });
   });
+
+  describe('Additional Edge Cases', () => {
+    it('should reset actions menu state when executing successful action', async () => {
+      const mockResult: SearchResult = {
+        id: 'tab-123',
+        title: 'Example Tab',
+        description: 'example.com',
+        type: 'tab',
+        actions: [
+          { id: 'switch', label: 'Switch', primary: true },
+          { id: 'close', label: 'Close', primary: false },
+        ],
+      };
+
+      mockBroker.sendActionRequest.mockResolvedValue({
+        success: true,
+      });
+
+      // Set up state with open actions menu
+      useOmniTabStore.getState().open();
+      useOmniTabStore.getState().setResults([mockResult]);
+      useOmniTabStore.getState().openActionsMenu();
+      useOmniTabStore.getState().setActionsMenuSelectedIndex(1);
+
+      await useOmniTabStore.getState().executeAction('tab-123', 'switch');
+
+      const state = useOmniTabStore.getState();
+      expect(state.isOpen).toBe(false);
+      expect(state.isActionsMenuOpen).toBe(false);
+      expect(state.actionsMenuSelectedIndex).toBe(0);
+    });
+
+    it('should handle command execution with actions menu state reset', async () => {
+      const mockCommand: Command = {
+        id: 'core.help',
+        name: 'Help',
+        description: 'Show help',
+        type: 'action',
+      };
+
+      const mockResult: SearchResult = {
+        id: 'cmd-core-help',
+        title: 'Help',
+        description: 'Show help',
+        type: 'command',
+        actions: [],
+        metadata: { command: mockCommand },
+      };
+
+      mockBroker.sendActionRequest.mockResolvedValue({
+        success: true,
+      });
+
+      // Set up state with open actions menu
+      useOmniTabStore.getState().open();
+      useOmniTabStore.getState().setResults([mockResult]);
+      useOmniTabStore.getState().openActionsMenu();
+
+      await useOmniTabStore
+        .getState()
+        .executeAction('cmd-core-help', 'execute');
+
+      const state = useOmniTabStore.getState();
+      expect(state.isOpen).toBe(false);
+      expect(state.isActionsMenuOpen).toBe(false);
+      expect(state.actionsMenuSelectedIndex).toBe(0);
+    });
+
+    it('should preserve actions menu state on command execution failure', async () => {
+      const mockCommand: Command = {
+        id: 'core.help',
+        name: 'Help',
+        description: 'Show help',
+        type: 'action',
+      };
+
+      const mockResult: SearchResult = {
+        id: 'cmd-core-help',
+        title: 'Help',
+        description: 'Show help',
+        type: 'command',
+        actions: [],
+        metadata: { command: mockCommand },
+      };
+
+      mockBroker.sendActionRequest.mockResolvedValue({
+        success: false,
+        error: 'Command failed',
+      });
+
+      // Set up state with open actions menu
+      useOmniTabStore.getState().setResults([mockResult]);
+      useOmniTabStore.getState().openActionsMenu();
+
+      await useOmniTabStore
+        .getState()
+        .executeAction('cmd-core-help', 'execute');
+
+      // Actions menu state should be preserved on failure
+      expect(useOmniTabStore.getState().error).toBe('Command failed');
+    });
+
+    it('should handle empty command id in split operation', async () => {
+      const mockCommand: Command = {
+        id: '', // Empty command ID
+        name: 'Empty Command',
+        description: 'Command with empty ID',
+        type: 'action',
+      };
+
+      const mockResult: SearchResult = {
+        id: 'cmd-empty',
+        title: 'Empty Command',
+        description: 'Empty command',
+        type: 'command',
+        actions: [],
+        metadata: { command: mockCommand },
+      };
+
+      mockBroker.sendActionRequest.mockResolvedValue({
+        success: true,
+      });
+
+      useOmniTabStore.getState().setResults([mockResult]);
+
+      await useOmniTabStore.getState().executeAction('cmd-empty', 'execute');
+
+      expect(mockBroker.sendActionRequest).toHaveBeenCalledWith(
+        '',
+        undefined,
+        'execute'
+      );
+    });
+
+    it('should handle result with undefined metadata', async () => {
+      const mockResult: SearchResult = {
+        id: 'tab-no-metadata',
+        title: 'Tab Without Metadata',
+        description: 'Tab without metadata',
+        type: 'tab',
+        actions: [],
+        // metadata is undefined
+      };
+
+      mockBroker.sendActionRequest.mockResolvedValue({
+        success: true,
+      });
+
+      useOmniTabStore.getState().setResults([mockResult]);
+
+      await useOmniTabStore
+        .getState()
+        .executeAction('tab-no-metadata', 'switch');
+
+      expect(mockBroker.sendActionRequest).toHaveBeenCalledWith(
+        'tab',
+        'search',
+        'switch',
+        'tab-no-metadata',
+        undefined
+      );
+    });
+  });
 });

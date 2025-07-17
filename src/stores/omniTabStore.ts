@@ -1,13 +1,19 @@
 import type { Command, OmniTabState, SearchResult } from '@/types/extension';
 import { clamp, debounce } from 'es-toolkit';
 import { create } from 'zustand';
+import { devtools } from 'zustand/middleware';
 
 import { getContentBroker } from '@/services/messageBroker';
 import { performSearch as performSearchService } from '@/services/searchService';
+import createStoreLogger from '@/utils/storeLogger';
 
 import { TAB_EXTENSION_ID, TabCommandId } from '../extensions';
 
 interface OmniTabStore extends OmniTabState {
+  // Actions Menu State
+  isActionsMenuOpen: boolean;
+  actionsMenuSelectedIndex: number;
+
   // Actions
   open: () => void;
   close: () => void;
@@ -23,6 +29,12 @@ interface OmniTabStore extends OmniTabState {
   setCommands: (commands: Command[]) => void;
   setInitialResults: (results: SearchResult[]) => void;
   reset: () => void;
+
+  // Actions Menu Actions
+  openActionsMenu: () => void;
+  closeActionsMenu: () => void;
+  toggleActionsMenu: () => void;
+  setActionsMenuSelectedIndex: (index: number) => void;
 
   // Async actions
   performSearch: (query: string) => Promise<void>;
@@ -44,243 +56,721 @@ const initialState: OmniTabState = {
   availableCommands: [],
 };
 
-export const useOmniTabStore = create<OmniTabStore>()((set, get) => ({
-  ...initialState,
+// Configure devtools for Chrome extension environment
+// Redux DevTools Extension needs special handling for content scripts
+const isDevMode = process.env.NODE_ENV === 'development';
 
-  // Basic state actions
-  open: () => {
-    set({
-      isOpen: true,
-      query: '',
-      selectedIndex: 0,
-      results: [],
-      loading: true,
-    });
-    // Load initial results when opened
-    const store = get();
-    if (store.loading && !store.query) {
-      store.loadInitialResults();
-    }
-  },
+// Create store with conditional devtools
+export const useOmniTabStore = create<OmniTabStore>()(
+  isDevMode
+    ? devtools(
+        (set, get) => ({
+          ...initialState,
+          isActionsMenuOpen: false,
+          actionsMenuSelectedIndex: 0,
 
-  close: () =>
-    set({
-      isOpen: false,
-      query: '',
-      selectedIndex: 0,
-      results: [],
-      error: undefined,
-      activeExtension: undefined,
-      activeCommand: undefined,
-    }),
+          // Basic state actions
+          open: () => {
+            set(
+              {
+                isOpen: true,
+                query: '',
+                selectedIndex: 0,
+                results: [],
+                loading: true,
+              },
+              false,
+              'open'
+            );
+            // Load initial results when opened
+            const store = get();
+            if (store.loading && !store.query) {
+              store.loadInitialResults();
+            }
+          },
 
-  setQuery: (query: string) => set({ query, selectedIndex: 0 }),
+          close: () =>
+            set(
+              {
+                isOpen: false,
+                query: '',
+                selectedIndex: 0,
+                results: [],
+                error: undefined,
+                activeExtension: undefined,
+                activeCommand: undefined,
+                isActionsMenuOpen: false,
+                actionsMenuSelectedIndex: 0,
+              },
+              false,
+              'close'
+            ),
 
-  setResults: (results: SearchResult[]) =>
-    set({ results, selectedIndex: 0, loading: false, error: undefined }),
+          setQuery: (query: string) =>
+            set({ query, selectedIndex: 0 }, false, 'setQuery'),
 
-  setLoading: (loading: boolean) => set({ loading }),
+          setResults: (results: SearchResult[]) =>
+            set(
+              { results, selectedIndex: 0, loading: false, error: undefined },
+              false,
+              'setResults'
+            ),
 
-  setError: (error: string | undefined) => set({ error, loading: false }),
+          setLoading: (loading: boolean) =>
+            set({ loading }, false, 'setLoading'),
 
-  setSelectedIndex: (index: number) => {
-    const state = get();
-    const clampedIndex = clamp(index, 0, Math.max(0, state.results.length - 1));
-    set({ selectedIndex: clampedIndex });
-  },
+          setError: (error: string | undefined) =>
+            set({ error, loading: false }, false, 'setError'),
 
-  setActiveExtension: (payload?: { extensionId: string; commandId: string }) =>
-    set({
-      activeExtension: payload?.extensionId,
-      activeCommand: payload?.commandId,
-    }),
+          setSelectedIndex: (index: number) => {
+            const state = get();
+            const clampedIndex = clamp(
+              index,
+              0,
+              Math.max(0, state.results.length - 1)
+            );
+            set({ selectedIndex: clampedIndex }, false, 'setSelectedIndex');
+          },
 
-  setCommands: (commands: Command[]) => set({ availableCommands: commands }),
+          setActiveExtension: (payload?: {
+            extensionId: string;
+            commandId: string;
+          }) =>
+            set(
+              {
+                activeExtension: payload?.extensionId,
+                activeCommand: payload?.commandId,
+              },
+              false,
+              'setActiveExtension'
+            ),
 
-  setInitialResults: (results: SearchResult[]) =>
-    set({ results, loading: false, error: undefined }),
+          setCommands: (commands: Command[]) =>
+            set({ availableCommands: commands }, false, 'setCommands'),
 
-  reset: () => set(initialState),
+          setInitialResults: (results: SearchResult[]) =>
+            set(
+              { results, loading: false, error: undefined },
+              false,
+              'setInitialResults'
+            ),
 
-  // Async actions
-  loadCommands: async () => {
-    try {
-      const broker = getContentBroker();
-      const response = await broker.sendActionRequest(
-        'core',
-        'get-commands',
-        'list'
-      );
+          reset: () =>
+            set(
+              {
+                ...initialState,
+                isActionsMenuOpen: false,
+                actionsMenuSelectedIndex: 0,
+              },
+              false,
+              'reset'
+            ),
 
-      if (response.success && response.data) {
-        const { commands } = response.data as { commands: Command[] };
-        set({ availableCommands: commands });
-      }
-    } catch (error) {
-      // Failed to load commands
-    }
-  },
+          // Actions Menu Actions
+          openActionsMenu: () => {
+            const state = get();
+            const selectedResult = state.results[state.selectedIndex];
+            if (
+              selectedResult &&
+              selectedResult.actions.filter((a) => !a.primary).length > 0
+            ) {
+              set(
+                { isActionsMenuOpen: true, actionsMenuSelectedIndex: 0 },
+                false,
+                'openActionsMenu'
+              );
+            }
+          },
 
-  loadInitialResults: async () => {
-    try {
-      const broker = getContentBroker();
-      const response = await broker.sendSearchRequest(
-        TAB_EXTENSION_ID,
-        TabCommandId.SEARCH,
-        ''
-      );
+          closeActionsMenu: () =>
+            set(
+              { isActionsMenuOpen: false, actionsMenuSelectedIndex: 0 },
+              false,
+              'closeActionsMenu'
+            ),
 
-      if (response.success && response.data) {
-        const { data } = response;
-        set({ results: data, loading: false, error: undefined });
-      }
-    } catch (error) {
-      set({ loading: false });
-    }
-  },
+          toggleActionsMenu: () => {
+            const state = get();
+            if (state.isActionsMenuOpen) {
+              set(
+                { isActionsMenuOpen: false, actionsMenuSelectedIndex: 0 },
+                false,
+                'toggleActionsMenu'
+              );
+            } else {
+              state.openActionsMenu();
+            }
+          },
 
-  performSearch: async (query: string) => {
-    const { availableCommands, loadInitialResults } = get();
+          setActionsMenuSelectedIndex: (index: number) => {
+            const state = get();
+            const selectedResult = state.results[state.selectedIndex];
+            if (selectedResult) {
+              const secondaryActions = selectedResult.actions.filter(
+                (a) => !a.primary
+              );
+              const actionsCount = secondaryActions.length;
+              if (actionsCount === 0) return;
 
-    set({ query, selectedIndex: 0 });
+              // Wrap around navigation
+              let newIndex = index;
+              if (index < 0) {
+                newIndex = actionsCount - 1; // Wrap to last item
+              } else if (index >= actionsCount) {
+                newIndex = 0; // Wrap to first item
+              }
 
-    if (!query.trim()) {
-      set({ loading: true });
-      await loadInitialResults();
-      return;
-    }
+              set(
+                { actionsMenuSelectedIndex: newIndex },
+                false,
+                'setActionsMenuSelectedIndex'
+              );
+            }
+          },
 
-    set({ loading: true });
+          // Async actions
+          loadCommands: async () => {
+            try {
+              const broker = getContentBroker();
+              const response = await broker.sendActionRequest(
+                'core',
+                'get-commands',
+                'list'
+              );
 
-    try {
-      const broker = getContentBroker();
-      // Perform search directly
-      const searchResult = await performSearchService({
-        query,
-        availableCommands,
-        broker,
-      });
+              if (response.success && response.data) {
+                const { commands } = response.data as { commands: Command[] };
+                set({ availableCommands: commands }, false, 'loadCommands');
+              }
+            } catch (error) {
+              // Failed to load commands
+            }
+          },
 
-      set({
-        results: searchResult.results,
-        selectedIndex: 0,
-        loading: false,
-        error: searchResult.error, // This will be undefined if no error, clearing previous errors
-      });
+          loadInitialResults: async () => {
+            try {
+              const broker = getContentBroker();
+              const response = await broker.sendSearchRequest(
+                TAB_EXTENSION_ID,
+                TabCommandId.SEARCH,
+                ''
+              );
 
-      if (searchResult.activeExtension && searchResult.activeCommand) {
-        set({
-          activeExtension: searchResult.activeExtension,
-          activeCommand: searchResult.activeCommand,
-        });
-      } else {
-        set({ activeExtension: undefined, activeCommand: undefined });
-      }
-    } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : 'Search failed',
-        loading: false,
-      });
-    }
-  },
+              if (response.success && response.data) {
+                const { data } = response;
+                set(
+                  { results: data, loading: false, error: undefined },
+                  false,
+                  'loadInitialResults'
+                );
+              }
+            } catch (error) {
+              set({ loading: false }, false, 'loadInitialResults');
+            }
+          },
 
-  executeAction: async (resultId: string, actionId: string) => {
-    const { results } = get();
-    const result = results.find((r) => r.id === resultId);
-    if (!result) return;
+          performSearch: async (query: string) => {
+            const { availableCommands, loadInitialResults } = get();
 
-    const broker = getContentBroker();
+            set({ query, selectedIndex: 0 }, false, 'performSearch');
 
-    // Handle command selection
-    if (result.type === 'command' && result.metadata?.command) {
-      const command = result.metadata.command as Command;
-      const [extensionId, commandId] = command.id.split('.');
+            if (!query.trim()) {
+              set({ loading: true }, false, 'performSearch');
+              await loadInitialResults();
+              return;
+            }
 
-      if (command.type === 'search') {
-        set({
-          activeExtension: extensionId,
-          activeCommand: commandId,
-          query: '',
-          results: [],
-        });
-      } else {
-        try {
-          const response = await broker.sendActionRequest(
-            extensionId,
-            commandId,
-            'execute'
-          );
+            set({ loading: true }, false, 'performSearch');
 
-          if (response.success) {
-            set({
-              isOpen: false,
-              query: '',
-              selectedIndex: 0,
-              results: [],
-              error: undefined,
-              activeExtension: undefined,
-              activeCommand: undefined,
-            });
-          } else {
-            set({ error: response.error });
-          }
-        } catch (error) {
-          set({
-            error: error instanceof Error ? error.message : 'Action failed',
-          });
+            try {
+              const broker = getContentBroker();
+              // Perform search directly
+              const searchResult = await performSearchService({
+                query,
+                availableCommands,
+                broker,
+              });
+
+              set(
+                {
+                  results: searchResult.results,
+                  selectedIndex: 0,
+                  loading: false,
+                  error: searchResult.error, // This will be undefined if no error, clearing previous errors
+                },
+                false,
+                'performSearch'
+              );
+
+              if (searchResult.activeExtension && searchResult.activeCommand) {
+                set(
+                  {
+                    activeExtension: searchResult.activeExtension,
+                    activeCommand: searchResult.activeCommand,
+                  },
+                  false,
+                  'performSearch'
+                );
+              } else {
+                set(
+                  { activeExtension: undefined, activeCommand: undefined },
+                  false,
+                  'performSearch'
+                );
+              }
+            } catch (error) {
+              set(
+                {
+                  error:
+                    error instanceof Error ? error.message : 'Search failed',
+                  loading: false,
+                },
+                false,
+                'performSearch'
+              );
+            }
+          },
+
+          executeAction: async (resultId: string, actionId: string) => {
+            const { results } = get();
+            const result = results.find((r) => r.id === resultId);
+            if (!result) return;
+
+            const broker = getContentBroker();
+
+            // Handle command selection
+            if (result.type === 'command' && result.metadata?.command) {
+              const command = result.metadata.command as Command;
+              const [extensionId, commandId] = command.id.split('.');
+
+              if (command.type === 'search') {
+                set(
+                  {
+                    activeExtension: extensionId,
+                    activeCommand: commandId,
+                    query: '',
+                    results: [],
+                  },
+                  false,
+                  'executeAction'
+                );
+              } else {
+                try {
+                  const response = await broker.sendActionRequest(
+                    extensionId,
+                    commandId,
+                    'execute'
+                  );
+
+                  if (response.success) {
+                    set({
+                      isOpen: false,
+                      query: '',
+                      selectedIndex: 0,
+                      results: [],
+                      error: undefined,
+                      activeExtension: undefined,
+                      activeCommand: undefined,
+                      isActionsMenuOpen: false,
+                      actionsMenuSelectedIndex: 0,
+                    });
+                  } else {
+                    set({ error: response.error });
+                  }
+                } catch (error) {
+                  set({
+                    error:
+                      error instanceof Error ? error.message : 'Action failed',
+                  });
+                }
+              }
+              return;
+            }
+
+            // Handle regular result actions
+            const extensionId = result.id.split('-')[0];
+
+            try {
+              const response = await broker.sendActionRequest(
+                extensionId,
+                'search',
+                actionId,
+                resultId,
+                result.metadata
+              );
+
+              if (response.success) {
+                set(
+                  {
+                    isOpen: false,
+                    query: '',
+                    selectedIndex: 0,
+                    results: [],
+                    error: undefined,
+                    activeExtension: undefined,
+                    activeCommand: undefined,
+                    isActionsMenuOpen: false,
+                    actionsMenuSelectedIndex: 0,
+                  },
+                  false,
+                  'executeAction'
+                );
+              } else {
+                set({ error: response.error }, false, 'executeAction');
+              }
+            } catch (error) {
+              set(
+                {
+                  error:
+                    error instanceof Error ? error.message : 'Action failed',
+                },
+                false,
+                'executeAction'
+              );
+            }
+          },
+
+          selectCommand: (commandId: string) => {
+            const [extensionId, cmdId] = commandId.split('.');
+            set(
+              {
+                activeExtension: extensionId,
+                activeCommand: cmdId,
+              },
+              false,
+              'selectCommand'
+            );
+          },
+        }),
+        {
+          name: 'omnitab-store',
+          trace: true,
         }
-      }
-      return;
-    }
+      )
+    : (set, get) => ({
+        ...initialState,
+        isActionsMenuOpen: false,
+        actionsMenuSelectedIndex: 0,
 
-    // Handle regular result actions
-    const extensionId = result.id.split('-')[0];
+        // Basic state actions
+        open: () => {
+          set({
+            isOpen: true,
+            query: '',
+            selectedIndex: 0,
+            results: [],
+            loading: true,
+          });
+          // Load initial results when opened
+          const store = get();
+          if (store.loading && !store.query) {
+            store.loadInitialResults();
+          }
+        },
 
-    try {
-      const response = await broker.sendActionRequest(
-        extensionId,
-        'search',
-        actionId,
-        resultId,
-        result.metadata
-      );
+        close: () =>
+          set({
+            isOpen: false,
+            query: '',
+            selectedIndex: 0,
+            results: [],
+            error: undefined,
+            activeExtension: undefined,
+            activeCommand: undefined,
+            isActionsMenuOpen: false,
+            actionsMenuSelectedIndex: 0,
+          }),
 
-      if (response.success) {
-        set({
-          isOpen: false,
-          query: '',
-          selectedIndex: 0,
-          results: [],
-          error: undefined,
-          activeExtension: undefined,
-          activeCommand: undefined,
-        });
-      } else {
-        set({ error: response.error });
-      }
-    } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : 'Action failed',
-      });
-    }
-  },
+        setQuery: (query: string) => set({ query, selectedIndex: 0 }),
 
-  selectCommand: (commandId: string) => {
-    const [extensionId, cmdId] = commandId.split('.');
-    set({
-      activeExtension: extensionId,
-      activeCommand: cmdId,
-    });
-  },
-}));
+        setResults: (results: SearchResult[]) =>
+          set({ results, selectedIndex: 0, loading: false, error: undefined }),
+
+        setLoading: (loading: boolean) => set({ loading }),
+
+        setError: (error: string | undefined) => set({ error, loading: false }),
+
+        setSelectedIndex: (index: number) => {
+          const state = get();
+          const clampedIndex = clamp(
+            index,
+            0,
+            Math.max(0, state.results.length - 1)
+          );
+          set({ selectedIndex: clampedIndex });
+        },
+
+        setActiveExtension: (payload?: {
+          extensionId: string;
+          commandId: string;
+        }) =>
+          set({
+            activeExtension: payload?.extensionId,
+            activeCommand: payload?.commandId,
+          }),
+
+        setCommands: (commands: Command[]) =>
+          set({ availableCommands: commands }),
+
+        setInitialResults: (results: SearchResult[]) =>
+          set({ results, loading: false, error: undefined }),
+
+        reset: () =>
+          set({
+            ...initialState,
+            isActionsMenuOpen: false,
+            actionsMenuSelectedIndex: 0,
+          }),
+
+        // Actions Menu Actions
+        openActionsMenu: () => {
+          const state = get();
+          const selectedResult = state.results[state.selectedIndex];
+          if (
+            selectedResult &&
+            selectedResult.actions.filter((a) => !a.primary).length > 0
+          ) {
+            set({ isActionsMenuOpen: true, actionsMenuSelectedIndex: 0 });
+          }
+        },
+
+        closeActionsMenu: () =>
+          set({ isActionsMenuOpen: false, actionsMenuSelectedIndex: 0 }),
+
+        toggleActionsMenu: () => {
+          const state = get();
+          if (state.isActionsMenuOpen) {
+            set({ isActionsMenuOpen: false, actionsMenuSelectedIndex: 0 });
+          } else {
+            state.openActionsMenu();
+          }
+        },
+
+        setActionsMenuSelectedIndex: (index: number) => {
+          const state = get();
+          const selectedResult = state.results[state.selectedIndex];
+          if (selectedResult) {
+            const secondaryActions = selectedResult.actions.filter(
+              (a) => !a.primary
+            );
+            const actionsCount = secondaryActions.length;
+            if (actionsCount === 0) return;
+
+            // Wrap around navigation
+            let newIndex = index;
+            if (index < 0) {
+              newIndex = actionsCount - 1; // Wrap to last item
+            } else if (index >= actionsCount) {
+              newIndex = 0; // Wrap to first item
+            }
+
+            set({ actionsMenuSelectedIndex: newIndex });
+          }
+        },
+
+        // Async actions
+        loadCommands: async () => {
+          try {
+            const broker = getContentBroker();
+            const response = await broker.sendActionRequest(
+              'core',
+              'get-commands',
+              'list'
+            );
+
+            if (response.success && response.data) {
+              const { commands } = response.data as { commands: Command[] };
+              set({ availableCommands: commands });
+            }
+          } catch (error) {
+            // Failed to load commands
+          }
+        },
+
+        loadInitialResults: async () => {
+          try {
+            const broker = getContentBroker();
+            const response = await broker.sendSearchRequest(
+              TAB_EXTENSION_ID,
+              TabCommandId.SEARCH,
+              ''
+            );
+
+            if (response.success && response.data) {
+              const { data } = response;
+              set({ results: data, loading: false, error: undefined });
+            }
+          } catch (error) {
+            set({ loading: false });
+          }
+        },
+
+        performSearch: async (query: string) => {
+          const { availableCommands, loadInitialResults } = get();
+
+          set({ query, selectedIndex: 0 });
+
+          if (!query.trim()) {
+            set({ loading: true });
+            await loadInitialResults();
+            return;
+          }
+
+          set({ loading: true });
+
+          try {
+            const broker = getContentBroker();
+            // Perform search directly
+            const searchResult = await performSearchService({
+              query,
+              availableCommands,
+              broker,
+            });
+
+            set({
+              results: searchResult.results,
+              selectedIndex: 0,
+              loading: false,
+              error: searchResult.error, // This will be undefined if no error, clearing previous errors
+            });
+
+            if (searchResult.activeExtension && searchResult.activeCommand) {
+              set({
+                activeExtension: searchResult.activeExtension,
+                activeCommand: searchResult.activeCommand,
+              });
+            } else {
+              set({ activeExtension: undefined, activeCommand: undefined });
+            }
+          } catch (error) {
+            set({
+              error: error instanceof Error ? error.message : 'Search failed',
+              loading: false,
+            });
+          }
+        },
+
+        executeAction: async (resultId: string, actionId: string) => {
+          const { results } = get();
+          const result = results.find((r) => r.id === resultId);
+          if (!result) return;
+
+          const broker = getContentBroker();
+
+          // Handle command selection
+          if (result.type === 'command' && result.metadata?.command) {
+            const command = result.metadata.command as Command;
+            const [extensionId, commandId] = command.id.split('.');
+
+            if (command.type === 'search') {
+              set({
+                activeExtension: extensionId,
+                activeCommand: commandId,
+                query: '',
+                results: [],
+              });
+            } else {
+              try {
+                const response = await broker.sendActionRequest(
+                  extensionId,
+                  commandId,
+                  'execute'
+                );
+
+                if (response.success) {
+                  set({
+                    isOpen: false,
+                    query: '',
+                    selectedIndex: 0,
+                    results: [],
+                    error: undefined,
+                    activeExtension: undefined,
+                    activeCommand: undefined,
+                    isActionsMenuOpen: false,
+                    actionsMenuSelectedIndex: 0,
+                  });
+                } else {
+                  set({ error: response.error });
+                }
+              } catch (error) {
+                set({
+                  error:
+                    error instanceof Error ? error.message : 'Action failed',
+                });
+              }
+            }
+            return;
+          }
+
+          // Handle regular result actions
+          const extensionId = result.id.split('-')[0];
+
+          try {
+            const response = await broker.sendActionRequest(
+              extensionId,
+              'search',
+              actionId,
+              resultId,
+              result.metadata
+            );
+
+            if (response.success) {
+              set({
+                isOpen: false,
+                query: '',
+                selectedIndex: 0,
+                results: [],
+                error: undefined,
+                activeExtension: undefined,
+                activeCommand: undefined,
+                isActionsMenuOpen: false,
+                actionsMenuSelectedIndex: 0,
+              });
+            } else {
+              set({ error: response.error });
+            }
+          } catch (error) {
+            set({
+              error: error instanceof Error ? error.message : 'Action failed',
+            });
+          }
+        },
+
+        selectCommand: (commandId: string) => {
+          const [extensionId, cmdId] = commandId.split('.');
+          set({
+            activeExtension: extensionId,
+            activeCommand: cmdId,
+          });
+        },
+      })
+);
 
 // Initialize store - load commands on creation
 useOmniTabStore.getState().loadCommands();
 
+// Expose store to window in development for debugging
+if (isDevMode && typeof window !== 'undefined') {
+  // @ts-expect-error - Adding store to window for debugging
+  window.omniTabStore = useOmniTabStore;
+
+  // Subscribe to store changes for logging
+  const logger = createStoreLogger('OmniTab');
+  useOmniTabStore.subscribe(logger);
+
+  // Development debugging instructions
+  // eslint-disable-next-line no-console
+  console.info('[OmniTab] Store debugging enabled. Access via:', {
+    'View state': 'window.omniTabStore.getState()',
+    'Open OmniTab': 'window.omniTabStore.getState().open()',
+    Subscribe: 'window.omniTabStore.subscribe(console.log)',
+  });
+}
+
 // Create debounced search function
 const debouncedPerformSearch = debounce((query: string) => {
   useOmniTabStore.getState().performSearch(query);
-}, 150);
+}, 300);
 
 // Subscribe to query changes for debounced search
 let previousQuery = '';

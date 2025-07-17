@@ -10,9 +10,15 @@ import { BaseExtension } from '@/services/extensionRegistry';
 import { getExtensionIconUrl } from '@/utils/urlUtils';
 
 import {
+  addTabToBookmarks,
   closeAllDuplicates,
+  closeOtherTabGroups,
+  closeOtherTabs,
   closeTab,
+  closeTabGroup,
   groupTabsByDomain,
+  muteTab,
+  pinTab,
   switchToTab,
 } from './actions';
 import {
@@ -60,6 +66,27 @@ class TabExtension extends BaseExtension {
       alias: [...TAB_ALIASES.GROUP_BY_DOMAIN],
       type: TabCommandType.ACTION,
     },
+    {
+      id: TabCommandId.CLOSE_GROUP,
+      name: 'Close Tab Group',
+      description: 'Close the current tab group',
+      alias: [...TAB_ALIASES.CLOSE_GROUP],
+      type: TabCommandType.ACTION,
+    },
+    {
+      id: TabCommandId.CLOSE_OTHER_GROUPS,
+      name: 'Close Other Tab Groups',
+      description: 'Close all tab groups except the current one',
+      alias: [...TAB_ALIASES.CLOSE_OTHER_GROUPS],
+      type: TabCommandType.ACTION,
+    },
+    {
+      id: TabCommandId.CLOSE_OTHER_TABS,
+      name: 'Close Other Tabs',
+      description: 'Close all tabs except the current one',
+      alias: [...TAB_ALIASES.CLOSE_OTHER_TABS],
+      type: TabCommandType.ACTION,
+    },
   ];
 
   // eslint-disable-next-line class-methods-use-this
@@ -104,17 +131,106 @@ class TabExtension extends BaseExtension {
         case TabCommandId.GROUP_BY_DOMAIN:
           return groupTabsByDomain();
 
+        case TabCommandId.CLOSE_GROUP:
+          // If no specific tab is provided, get the current active tab
+          if (!payload.resultId) {
+            const [activeTab] = await chrome.tabs.query({
+              active: true,
+              currentWindow: true,
+            });
+            if (activeTab?.id) {
+              return closeTabGroup(activeTab.id);
+            }
+            return {
+              success: false,
+              error: 'No active tab found',
+            };
+          }
+          return {
+            success: false,
+            error: 'Tab ID is required for this action',
+          };
+
+        case TabCommandId.CLOSE_OTHER_GROUPS:
+          // If no specific tab is provided, get the current active tab
+          if (!payload.resultId) {
+            const [activeTab] = await chrome.tabs.query({
+              active: true,
+              currentWindow: true,
+            });
+            if (activeTab?.id) {
+              return closeOtherTabGroups(activeTab.id);
+            }
+            return {
+              success: false,
+              error: 'No active tab found',
+            };
+          }
+          return {
+            success: false,
+            error: 'Tab ID is required for this action',
+          };
+
+        case TabCommandId.CLOSE_OTHER_TABS:
+          // If no specific tab is provided, get the current active tab
+          if (!payload.resultId) {
+            const [activeTab] = await chrome.tabs.query({
+              active: true,
+              currentWindow: true,
+            });
+            if (activeTab?.id) {
+              return closeOtherTabs(activeTab.id);
+            }
+            return {
+              success: false,
+              error: 'No active tab found',
+            };
+          }
+          return {
+            success: false,
+            error: 'Tab ID is required for this action',
+          };
+
         default:
           // Handle tab-specific actions (switch, close)
-          if (payload.actionId === TabActionId.SWITCH && payload.resultId) {
+          if (payload.resultId) {
             // Extract tab ID from result ID (format: "tab-123")
             const tabId = parseInt(payload.resultId.replace('tab-', ''), 10);
-            return switchToTab(tabId);
-          }
-          if (payload.actionId === TabActionId.CLOSE && payload.resultId) {
-            // Extract tab ID from result ID (format: "tab-123")
-            const tabId = parseInt(payload.resultId.replace('tab-', ''), 10);
-            return closeTab(tabId);
+
+            switch (payload.actionId) {
+              case TabActionId.SWITCH:
+                return switchToTab(tabId);
+
+              case TabActionId.CLOSE:
+                return closeTab(tabId);
+
+              case TabActionId.MUTE:
+                return muteTab(tabId, Boolean(payload.metadata?.muted));
+
+              case TabActionId.PIN:
+                return pinTab(tabId, Boolean(payload.metadata?.pinned));
+
+              case TabActionId.CLOSE_OTHERS:
+                return closeOtherTabs(tabId);
+
+              case TabActionId.CLOSE_GROUP:
+                return closeTabGroup(tabId);
+
+              case TabActionId.CLOSE_OTHER_GROUPS:
+                return closeOtherTabGroups(tabId);
+
+              case TabActionId.BOOKMARK:
+                return addTabToBookmarks(tabId);
+
+              default:
+                return {
+                  success: false,
+                  error: TAB_MESSAGES.UNKNOWN_ACTION(
+                    commandId,
+                    payload.actionId || ''
+                  ),
+                };
+            }
           }
 
           return {
