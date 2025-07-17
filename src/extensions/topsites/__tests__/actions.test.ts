@@ -17,7 +17,7 @@ global.chrome = {
 describe('TopSites Extension Actions', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    global.chrome.runtime.lastError = null;
+    global.chrome.runtime.lastError = undefined;
   });
 
   describe('openTopSite', () => {

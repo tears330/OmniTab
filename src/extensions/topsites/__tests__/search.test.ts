@@ -45,7 +45,7 @@ jest.mock('@/utils/urlUtils', () => ({
 describe('TopSites Extension Search Utilities', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    global.chrome.runtime.lastError = null;
+    global.chrome.runtime.lastError = undefined;
   });
 
   describe('getTopSites', () => {
@@ -56,11 +56,13 @@ describe('TopSites Extension Search Utilities', () => {
         { url: 'https://stackoverflow.com', title: 'Stack Overflow' },
       ];
 
-      const mockGet = jest.fn((callback) => {
-        callback(mockTopSites);
-      });
+      const mockGet = jest.fn(
+        (callback: (data: chrome.topSites.MostVisitedURL[]) => void) => {
+          callback(mockTopSites);
+        }
+      );
 
-      global.chrome.topSites.get = mockGet;
+      global.chrome.topSites.get = mockGet as any;
 
       const result = await getTopSites();
 
@@ -69,11 +71,13 @@ describe('TopSites Extension Search Utilities', () => {
     });
 
     it('should handle empty top sites array', async () => {
-      const mockGet = jest.fn((callback) => {
-        callback([]);
-      });
+      const mockGet = jest.fn(
+        (callback: (data: chrome.topSites.MostVisitedURL[]) => void) => {
+          callback([]);
+        }
+      );
 
-      global.chrome.topSites.get = mockGet;
+      global.chrome.topSites.get = mockGet as any;
 
       const result = await getTopSites();
 
@@ -81,12 +85,14 @@ describe('TopSites Extension Search Utilities', () => {
     });
 
     it('should handle Chrome runtime error', async () => {
-      const mockGet = jest.fn((callback) => {
-        global.chrome.runtime.lastError = { message: 'Permission denied' };
-        callback(null);
-      });
+      const mockGet = jest.fn(
+        (callback: (data: chrome.topSites.MostVisitedURL[]) => void) => {
+          global.chrome.runtime.lastError = { message: 'Permission denied' };
+          callback([]);
+        }
+      );
 
-      global.chrome.topSites.get = mockGet;
+      global.chrome.topSites.get = mockGet as any;
 
       await expect(getTopSites()).rejects.toThrow('Permission denied');
     });
@@ -100,12 +106,14 @@ describe('TopSites Extension Search Utilities', () => {
     });
 
     it('should handle null callback result', async () => {
-      const mockGet = jest.fn((callback) => {
-        callback(null);
-      });
+      const mockGet = jest.fn(
+        (callback: (data: chrome.topSites.MostVisitedURL[]) => void) => {
+          callback([]);
+        }
+      );
 
       // Ensure topSites exists
-      global.chrome.topSites = { get: mockGet };
+      global.chrome.topSites = { get: mockGet as any };
 
       const result = await getTopSites();
 
@@ -113,12 +121,14 @@ describe('TopSites Extension Search Utilities', () => {
     });
 
     it('should handle undefined callback result', async () => {
-      const mockGet = jest.fn((callback) => {
-        callback(undefined);
-      });
+      const mockGet = jest.fn(
+        (callback: (data: chrome.topSites.MostVisitedURL[]) => void) => {
+          callback([]);
+        }
+      );
 
       // Ensure topSites exists
-      global.chrome.topSites = { get: mockGet };
+      global.chrome.topSites = { get: mockGet as any };
 
       const result = await getTopSites();
 
@@ -167,7 +177,7 @@ describe('TopSites Extension Search Utilities', () => {
 
       expect(result.title).toBe('example.com');
       expect(result.description).toBe('example.com');
-      expect(result.metadata.score).toBe(99);
+      expect(result.metadata!.score).toBe(99);
     });
 
     it('should handle top site with null title', () => {
@@ -179,7 +189,7 @@ describe('TopSites Extension Search Utilities', () => {
       const result = topSiteToSearchResult(mockTopSite, 2);
 
       expect(result.title).toBe('test.com');
-      expect(result.metadata.score).toBe(98);
+      expect(result.metadata!.score).toBe(98);
     });
 
     it('should handle top site with undefined title', () => {
@@ -191,7 +201,7 @@ describe('TopSites Extension Search Utilities', () => {
       const result = topSiteToSearchResult(mockTopSite, 3);
 
       expect(result.title).toBe('site.com');
-      expect(result.metadata.score).toBe(97);
+      expect(result.metadata!.score).toBe(97);
     });
 
     it('should use fallback icon when favicon is not available', () => {
@@ -230,7 +240,7 @@ describe('TopSites Extension Search Utilities', () => {
         const result = topSiteToSearchResult(mockTopSite, index);
 
         expect(result.description).toBe(testCase.expectedDomain);
-        expect(result.metadata.url).toBe(testCase.url);
+        expect(result.metadata!.url).toBe(testCase.url);
       });
     });
 
@@ -259,9 +269,9 @@ describe('TopSites Extension Search Utilities', () => {
       const result2 = topSiteToSearchResult(mockTopSite, 5);
       const result3 = topSiteToSearchResult(mockTopSite, 19);
 
-      expect(result1.metadata.score).toBe(100);
-      expect(result2.metadata.score).toBe(95);
-      expect(result3.metadata.score).toBe(81);
+      expect(result1.metadata!.score).toBe(100);
+      expect(result2.metadata!.score).toBe(95);
+      expect(result3.metadata!.score).toBe(81);
     });
   });
 
@@ -419,11 +429,13 @@ describe('TopSites Extension Search Utilities', () => {
         { url: 'https://github.com', title: 'GitHub' },
       ];
 
-      const mockGet = jest.fn((callback) => {
-        callback(mockTopSites);
-      });
+      const mockGet = jest.fn(
+        (callback: (data: chrome.topSites.MostVisitedURL[]) => void) => {
+          callback(mockTopSites);
+        }
+      );
 
-      global.chrome.topSites.get = mockGet;
+      global.chrome.topSites.get = mockGet as any;
 
       const result = await searchTopSites('');
 
@@ -441,17 +453,19 @@ describe('TopSites Extension Search Utilities', () => {
         { url: 'https://stackoverflow.com', title: 'Stack Overflow' },
       ];
 
-      const mockGet = jest.fn((callback) => {
-        callback(mockTopSites);
-      });
+      const mockGet = jest.fn(
+        (callback: (data: chrome.topSites.MostVisitedURL[]) => void) => {
+          callback(mockTopSites);
+        }
+      );
 
-      global.chrome.topSites.get = mockGet;
+      global.chrome.topSites.get = mockGet as any;
 
       const result = await searchTopSites('git');
 
       expect(result).toHaveLength(1);
       expect(result[0].title).toBe('GitHub');
-      expect(result[0].metadata.url).toBe('https://github.com');
+      expect(result[0].metadata!.url).toBe('https://github.com');
     });
 
     it('should return empty array when no matches found', async () => {
@@ -460,11 +474,13 @@ describe('TopSites Extension Search Utilities', () => {
         { url: 'https://github.com', title: 'GitHub' },
       ];
 
-      const mockGet = jest.fn((callback) => {
-        callback(mockTopSites);
-      });
+      const mockGet = jest.fn(
+        (callback: (data: chrome.topSites.MostVisitedURL[]) => void) => {
+          callback(mockTopSites);
+        }
+      );
 
-      global.chrome.topSites.get = mockGet;
+      global.chrome.topSites.get = mockGet as any;
 
       const result = await searchTopSites('nonexistent');
 
@@ -472,12 +488,14 @@ describe('TopSites Extension Search Utilities', () => {
     });
 
     it('should handle Chrome API errors', async () => {
-      const mockGet = jest.fn((callback) => {
-        global.chrome.runtime.lastError = { message: 'Permission denied' };
-        callback(null);
-      });
+      const mockGet = jest.fn(
+        (callback: (data: chrome.topSites.MostVisitedURL[]) => void) => {
+          global.chrome.runtime.lastError = { message: 'Permission denied' };
+          callback([]);
+        }
+      );
 
-      global.chrome.topSites.get = mockGet;
+      global.chrome.topSites.get = mockGet as any;
 
       await expect(searchTopSites('test')).rejects.toThrow('Permission denied');
     });
@@ -497,21 +515,23 @@ describe('TopSites Extension Search Utilities', () => {
         { url: 'https://site3.com', title: 'Site 3' },
       ];
 
-      const mockGet = jest.fn((callback) => {
-        callback(mockTopSites);
-      });
+      const mockGet = jest.fn(
+        (callback: (data: chrome.topSites.MostVisitedURL[]) => void) => {
+          callback(mockTopSites);
+        }
+      );
 
-      global.chrome.topSites.get = mockGet;
+      global.chrome.topSites.get = mockGet as any;
 
       const result = await searchTopSites('site');
 
       expect(result).toHaveLength(3);
       expect(result[0].id).toBe('topsites-0');
-      expect(result[0].metadata.score).toBe(100);
+      expect(result[0].metadata!.score).toBe(100);
       expect(result[1].id).toBe('topsites-1');
-      expect(result[1].metadata.score).toBe(99);
+      expect(result[1].metadata!.score).toBe(99);
       expect(result[2].id).toBe('topsites-2');
-      expect(result[2].metadata.score).toBe(98);
+      expect(result[2].metadata!.score).toBe(98);
     });
   });
 
@@ -525,11 +545,13 @@ describe('TopSites Extension Search Utilities', () => {
         { url: 'https://reddit.com', title: 'Reddit' },
       ];
 
-      const mockGet = jest.fn((callback) => {
-        callback(mockTopSites);
-      });
+      const mockGet = jest.fn(
+        (callback: (data: chrome.topSites.MostVisitedURL[]) => void) => {
+          callback(mockTopSites);
+        }
+      );
 
-      global.chrome.topSites.get = mockGet;
+      global.chrome.topSites.get = mockGet as any;
 
       const result = await searchTopSites('o');
 

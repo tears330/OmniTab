@@ -37,7 +37,7 @@ describe('TopSitesExtension', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     extension = new TopSitesExtension();
-    global.chrome.runtime.lastError = null;
+    global.chrome.runtime.lastError = undefined;
   });
 
   describe('Extension Properties', () => {
@@ -253,23 +253,23 @@ describe('TopSitesExtension', () => {
       // Reset to default successful responses
       mockHandleTopSitesSearch.mockResolvedValue({
         success: true,
-        data: { action: 'search_ready' },
+        data: { actionId: 'search_ready' },
       });
       mockOpenTopSite.mockResolvedValue({
         success: true,
-        data: { action: 'opened' },
+        data: { actionId: 'opened' },
       });
     });
 
     it('should handle search action command', async () => {
       const mockResponse = {
         success: true,
-        data: { action: 'search_ready' },
+        data: { actionId: 'search_ready' },
       };
 
       mockHandleTopSitesSearch.mockResolvedValue(mockResponse);
 
-      const payload: ActionPayload = { action: 'execute' };
+      const payload: ActionPayload = { actionId: 'execute' };
       const result = await extension.handleAction(
         TopSitesCommandId.SEARCH,
         payload
@@ -282,13 +282,13 @@ describe('TopSitesExtension', () => {
     it('should handle result-based action with URL metadata', async () => {
       const mockResponse = {
         success: true,
-        data: { action: 'opened', url: 'https://example.com' },
+        data: { actionId: 'opened', url: 'https://example.com' },
       };
 
       mockOpenTopSite.mockResolvedValue(mockResponse);
 
       const payload: ActionPayload = {
-        action: 'open',
+        actionId: 'open',
         metadata: { url: 'https://example.com' },
       };
 
@@ -300,7 +300,7 @@ describe('TopSitesExtension', () => {
 
     it('should handle result-based action without URL metadata', async () => {
       const payload: ActionPayload = {
-        action: 'open',
+        actionId: 'open',
         metadata: { title: 'Test' },
       };
 
@@ -313,7 +313,7 @@ describe('TopSitesExtension', () => {
     });
 
     it('should handle result-based action with undefined metadata', async () => {
-      const payload: ActionPayload = { action: 'open' };
+      const payload: ActionPayload = { actionId: 'open' };
 
       const result = await extension.handleAction('open', payload);
 
@@ -324,7 +324,7 @@ describe('TopSitesExtension', () => {
     });
 
     it('should handle unknown action command', async () => {
-      const payload: ActionPayload = { action: 'unknown' };
+      const payload: ActionPayload = { actionId: 'unknown' };
 
       const result = await extension.handleAction('unknown-command', payload);
 
@@ -336,7 +336,7 @@ describe('TopSitesExtension', () => {
 
     it('should handle successful action execution', async () => {
       // This test verifies that the try-catch block works for successful operations
-      const payload: ActionPayload = { action: 'execute' };
+      const payload: ActionPayload = { actionId: 'execute' };
 
       const result = await extension.handleAction(
         TopSitesCommandId.SEARCH,
@@ -345,14 +345,14 @@ describe('TopSitesExtension', () => {
 
       expect(result).toEqual({
         success: true,
-        data: { action: 'search_ready' },
+        data: { actionId: 'search_ready' },
       });
     });
 
     it('should handle successful openTopSite action', async () => {
       // This test verifies that the try-catch block works for successful operations
       const payload: ActionPayload = {
-        action: 'open',
+        actionId: 'open',
         metadata: { url: 'https://example.com' },
       };
 
@@ -360,7 +360,7 @@ describe('TopSitesExtension', () => {
 
       expect(result).toEqual({
         success: true,
-        data: { action: 'opened' },
+        data: { actionId: 'opened' },
       });
     });
   });
@@ -433,7 +433,7 @@ describe('TopSitesExtension', () => {
       mockHandleTopSitesSearch.mockClear();
       mockHandleTopSitesSearch.mockResolvedValue({
         success: true,
-        data: { action: 'search_ready' },
+        data: { actionId: 'search_ready' },
       });
 
       const result = await extension.handleAction(
@@ -442,7 +442,7 @@ describe('TopSitesExtension', () => {
       );
 
       expect(result.success).toBe(true);
-      expect(result.data).toEqual({ action: 'search_ready' });
+      expect(result.data).toEqual({ actionId: 'search_ready' });
     });
 
     it('should handle empty string command in handleSearch', async () => {
@@ -456,7 +456,7 @@ describe('TopSitesExtension', () => {
     });
 
     it('should handle empty string command in handleAction', async () => {
-      const payload: ActionPayload = { action: 'test' };
+      const payload: ActionPayload = { actionId: 'test' };
       const result = await extension.handleAction('', payload);
 
       expect(result).toEqual({
@@ -476,7 +476,7 @@ describe('TopSitesExtension', () => {
     });
 
     it('should handle undefined command in handleAction', async () => {
-      const payload: ActionPayload = { action: 'test' };
+      const payload: ActionPayload = { actionId: 'test' };
       const result = await extension.handleAction(undefined as any, payload);
 
       expect(result).toEqual({
@@ -520,10 +520,10 @@ describe('TopSitesExtension', () => {
         >;
       mockHandleTopSitesSearch.mockResolvedValue({
         success: true,
-        data: { action: 'search_ready' },
+        data: { actionId: 'search_ready' },
       });
 
-      const payload: ActionPayload = { action: 'execute' };
+      const payload: ActionPayload = { actionId: 'execute' };
       const promises = Array(10)
         .fill(null)
         .map(() => extension.handleAction(TopSitesCommandId.SEARCH, payload));
@@ -532,7 +532,7 @@ describe('TopSitesExtension', () => {
 
       results.forEach((result) => {
         expect(result.success).toBe(true);
-        expect(result.data).toEqual({ action: 'search_ready' });
+        expect(result.data).toEqual({ actionId: 'search_ready' });
       });
 
       expect(mockHandleTopSitesSearch).toHaveBeenCalledTimes(10);
@@ -545,19 +545,47 @@ describe('TopSitesExtension', () => {
       >;
 
       // First call
-      mockSearchTopSites.mockResolvedValueOnce([{ id: 'test-1' }]);
+      mockSearchTopSites.mockResolvedValueOnce([
+        {
+          id: 'test-1',
+          title: 'Test 1',
+          actions: [],
+          type: 'topSites',
+        },
+      ]);
       const result1 = await extension.handleSearch(TopSitesCommandId.SEARCH, {
         query: 'test1',
       });
 
       // Second call
-      mockSearchTopSites.mockResolvedValueOnce([{ id: 'test-2' }]);
+      mockSearchTopSites.mockResolvedValueOnce([
+        {
+          id: 'test-2',
+          title: 'Test 2',
+          actions: [],
+          type: 'topSites',
+        },
+      ]);
       const result2 = await extension.handleSearch(TopSitesCommandId.SEARCH, {
         query: 'test2',
       });
 
-      expect(result1.data).toEqual([{ id: 'test-1' }]);
-      expect(result2.data).toEqual([{ id: 'test-2' }]);
+      expect(result1.data).toEqual([
+        {
+          id: 'test-1',
+          title: 'Test 1',
+          actions: [],
+          type: 'topSites',
+        },
+      ]);
+      expect(result2.data).toEqual([
+        {
+          id: 'test-2',
+          title: 'Test 2',
+          actions: [],
+          type: 'topSites',
+        },
+      ]);
       expect(mockSearchTopSites).toHaveBeenCalledTimes(2);
     });
   });
