@@ -272,7 +272,7 @@ export const useOmniTabStore = create<OmniTabStore>()(
           performSearch: async (query: string) => {
             const { availableCommands, loadInitialResults } = get();
 
-            set({ query, selectedIndex: 0 }, false, 'performSearch');
+            set({ selectedIndex: 0 }, false, 'performSearch');
 
             if (!query.trim()) {
               set({ loading: true }, false, 'performSearch');
