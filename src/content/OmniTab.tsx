@@ -54,85 +54,20 @@ function OmniTab({ isOpen, onClose }: OmniTabProps) {
   );
 
   // Use keyboard navigation hook
-  const { handleKeyDown: handleNavigationKeyDown } = useKeyboardNavigation({
-    results: store.results,
-    selectedIndex: store.selectedIndex,
-    onSelectIndex: handleSelectIndex,
-    onClose,
-    onExecuteAction: store.executeAction,
-  });
-
-  // Handle keyboard events at the container level
-  const handleContainerKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      // Special handling for Escape key - always close
-      if (e.key === 'Escape') {
-        onClose();
-        return;
-      }
-
-      // Let the navigation handler try to handle the event first
-      const handled = handleNavigationKeyDown(e);
-
-      // If navigation didn't handle it and it's a text input key, focus the input
-      if (
-        !handled &&
-        inputRef.current &&
-        document.activeElement !== inputRef.current
-      ) {
-        // Check if it's a regular text input key (not a navigation key)
-        const isTextInputKey =
-          (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) || // Regular character keys
-          ['Backspace', 'Delete'].includes(e.key);
-
-        if (isTextInputKey) {
-          inputRef.current.focus();
-          // Don't manually update the input value - let the input handle it naturally
-          // The focus() will allow the input to handle the keypress normally
-        }
-      }
-    },
-    [handleNavigationKeyDown, onClose]
-  );
-
-  // Handle search input specific key events
-  const handleSearchInputKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      // Only handle specific navigation keys, let everything else pass through
-      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-        handleNavigationKeyDown(e);
-        return;
-      }
-
-      if (e.key === 'Enter') {
-        handleNavigationKeyDown(e);
-        return;
-      }
-
-      if (e.key === 'Escape') {
-        handleNavigationKeyDown(e);
-        return;
-      }
-
-      // Handle Cmd/Ctrl+K for actions menu
-      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
-        handleNavigationKeyDown(e);
-        return;
-      }
-
-      // Handle Emacs navigation (Ctrl+N/P)
-      if (
-        e.ctrlKey &&
-        (e.key === 'n' || e.key === 'N' || e.key === 'p' || e.key === 'P')
-      ) {
-        handleNavigationKeyDown(e);
-      }
-
-      // For all other keys (including text input, Cmd+A, etc.), let them pass through naturally
-      // Don't call handleNavigationKeyDown for these
-    },
-    [handleNavigationKeyDown]
-  );
+  const { handleContainerKeyDown, handleSearchInputKeyDown } =
+    useKeyboardNavigation({
+      results: store.results,
+      selectedIndex: store.selectedIndex,
+      onSelectIndex: handleSelectIndex,
+      onClose,
+      onExecuteAction: store.executeAction,
+      inputRef,
+      isActionsMenuOpen: store.isActionsMenuOpen,
+      actionsMenuSelectedIndex: store.actionsMenuSelectedIndex,
+      onToggleActionsMenu: store.toggleActionsMenu,
+      onCloseActionsMenu: store.closeActionsMenu,
+      onSetActionsMenuSelectedIndex: store.setActionsMenuSelectedIndex,
+    });
 
   if (!isOpen) return null;
 
