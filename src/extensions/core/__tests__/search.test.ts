@@ -108,16 +108,17 @@ describe('Core Extension Search', () => {
     });
 
     it('should filter commands by alias', () => {
-      const results = searchCommands('h', mockCommands);
+      const results = searchCommands('reload', mockCommands);
 
       expect(results).toHaveLength(1);
-      expect(results[0].title).toBe('Help Command');
+      expect(results[0].title).toBe('Reload Extensions');
     });
 
-    it('should exclude search type commands', () => {
+    it('should include search type commands', () => {
       const results = searchCommands('search', mockCommands);
 
-      expect(results).toHaveLength(0);
+      expect(results).toHaveLength(1);
+      expect(results[0].title).toBe('Search Command');
     });
 
     it('should perform case-insensitive search', () => {
@@ -133,12 +134,13 @@ describe('Core Extension Search', () => {
       expect(results).toHaveLength(0);
     });
 
-    it('should return all non-search commands when query is empty', () => {
+    it('should return all commands when query is empty', () => {
       const results = searchCommands('', mockCommands);
 
-      expect(results).toHaveLength(2);
+      expect(results).toHaveLength(3);
       expect(results.map((r) => r.title)).toEqual([
         'Help Command',
+        'Search Command',
         'Reload Extensions',
       ]);
     });
