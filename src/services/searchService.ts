@@ -4,8 +4,15 @@ import type {
   SearchOptions,
   SearchResults,
 } from '@/types/search';
+import type { IFuseOptions } from 'fuse.js';
 import { groupBy, uniqBy } from 'es-toolkit';
+import Fuse from 'fuse.js';
 
+import { BookmarkResultType } from '@/extensions/bookmark/constants';
+import { SearchResultType } from '@/extensions/core/constants';
+import { HistoryResultType } from '@/extensions/history/constants';
+import { TabResultType } from '@/extensions/tab/constants';
+import { TopSitesResultType } from '@/extensions/topsites/constants';
 import {
   createEmptyResult,
   createErrorResult,
@@ -19,7 +26,7 @@ import {
 export type { SearchBroker, SearchOptions, SearchResults };
 
 /**
- * Performs a search across all available extensions
+ * Performs a search across all available extensions with Fuse.js optimization
  */
 export async function searchAllExtensions(
   query: string,
@@ -46,7 +53,65 @@ export async function searchAllExtensions(
   const flatResults = results.flat();
 
   // Remove duplicate results by ID using es-toolkit
-  return uniqBy(flatResults, (result) => result.id);
+  const uniqueResults = uniqBy(flatResults, (result) => result.id);
+
+  // If no query, return results as-is (for empty state or browsing)
+  if (!query.trim()) {
+    return uniqueResults;
+  }
+
+  // Type priority mapping (lower number = higher priority)
+  const getTypePriority = (type: string): number => {
+    switch (type.toLowerCase()) {
+      case TabResultType.TAB:
+        return 1; // Highest priority
+      case HistoryResultType.HISTORY:
+        return 2;
+      case BookmarkResultType.BOOKMARK:
+        return 3;
+      case SearchResultType.COMMAND:
+        return 4; // Lowest priority
+      case TopSitesResultType.TOP_SITE:
+        return 5; // TopSites priority
+      default:
+        return 6; // Unknown types get lowest priority
+    }
+  };
+
+  // Configure Fuse.js for fuzzy search optimization
+  const fuseOptions: IFuseOptions<SearchResult> = {
+    keys: [
+      { name: 'title', weight: 2 }, // Title is most important
+      { name: 'description', weight: 1 }, // Description is secondary
+      { name: 'type', weight: 2 }, // Type has same weight as title
+    ],
+    threshold: 0.6, // Allow moderate fuzziness (0 = perfect match, 1 = match anything)
+    distance: 100, // Maximum character distance for matches
+    minMatchCharLength: 1, // Minimum character length for matches
+    includeScore: true, // Include relevance score
+    shouldSort: false, // We'll sort manually with type priority
+  };
+
+  // Create Fuse instance and search
+  const fuse = new Fuse(uniqueResults, fuseOptions);
+  const fuseResults = fuse.search(query);
+
+  // Sort results by type priority first, then by Fuse score
+  const sortedResults = fuseResults.sort((a, b) => {
+    const typePriorityA = getTypePriority(a.item.type);
+    const typePriorityB = getTypePriority(b.item.type);
+
+    // If types have different priorities, sort by type priority
+    if (typePriorityA !== typePriorityB) {
+      return typePriorityA - typePriorityB;
+    }
+
+    // If types have same priority, sort by Fuse score (lower score = more relevant)
+    return (a.score || 0) - (b.score || 0);
+  });
+
+  // Return sorted results
+  return sortedResults.map((result) => result.item);
 }
 
 /**
