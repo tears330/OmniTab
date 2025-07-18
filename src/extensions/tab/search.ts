@@ -15,6 +15,12 @@ import {
 export async function searchTabs(query: string): Promise<chrome.tabs.Tab[]> {
   return new Promise((resolve) => {
     chrome.tabs.query({}, (tabs) => {
+      // Handle null/undefined tabs array
+      if (!tabs || !Array.isArray(tabs)) {
+        resolve([]);
+        return;
+      }
+
       let results: chrome.tabs.Tab[];
 
       if (!query) {

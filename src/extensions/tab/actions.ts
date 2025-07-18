@@ -3,6 +3,17 @@ import type { ExtensionResponse } from '@/types/extension';
 import { TAB_MESSAGES } from './constants';
 
 /**
+ * Get the current active tab in the current window
+ */
+export async function getCurrentActiveTab(): Promise<chrome.tabs.Tab | null> {
+  const [activeTab] = await chrome.tabs.query({
+    active: true,
+    currentWindow: true,
+  });
+  return activeTab || null;
+}
+
+/**
  * Switch to a specific tab
  */
 export async function switchToTab(tabId: number): Promise<ExtensionResponse> {
