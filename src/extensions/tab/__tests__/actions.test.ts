@@ -231,6 +231,7 @@ describe('Tab Extension Actions', () => {
       // Mock tabGroups API availability
       mockChrome.tabGroups = {
         update: jest.fn(),
+        TAB_GROUP_ID_NONE: -1,
       };
     });
 
