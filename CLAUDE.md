@@ -305,10 +305,9 @@ This command will:
 
 #### 3. Create Release PR
 
-Push the branch and create a pull request:
+Push the branch and tag created by `pnpm version` and create a pull request:
 
 ```bash
-git push -u origin release/v<NEW_VERSION>
 gh pr create --title "Release v<NEW_VERSION>" --body "Bump version to <NEW_VERSION>"
 ```
 
@@ -317,18 +316,7 @@ gh pr create --title "Release v<NEW_VERSION>" --body "Bump version to <NEW_VERSI
 After review and approval, merge the PR to main:
 
 ```bash
-gh pr merge --merge  # Use merge commit for release PRs
-```
-
-#### 5. Create Release Tag
-
-Create and push the release tag to trigger the GitHub Actions release workflow:
-
-```bash
-git checkout main
-git pull origin main
-git tag v<NEW_VERSION>
-git push origin v<NEW_VERSION>
+gh pr merge --rebase  # Use merge commit for release PRs
 ```
 
 ### Automated Release Workflow
