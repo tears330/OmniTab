@@ -4,6 +4,7 @@ import {
   createSuccessResult,
   parseCommand,
   parseCommandId,
+  parseCommandWithNonSpace,
   safeSearchRequest,
 } from '../searchUtils';
 
@@ -79,6 +80,70 @@ describe('searchUtils', () => {
     it('should handle empty input', () => {
       expect(parseCommand('')).toEqual({ searchTerm: '' });
       expect(parseCommand('   ')).toEqual({ searchTerm: '' });
+    });
+  });
+
+  describe('parseCommandWithNonSpace', () => {
+    const mockCommands = [
+      { alias: ['>'], immediateAlias: true },
+      { alias: ['t', 'tab'] }, // default behavior (requires space)
+      { alias: ['h', 'history'] }, // default behavior (requires space)
+      { alias: ['close'], immediateAlias: true },
+    ];
+
+    it('should match immediate aliases first', () => {
+      expect(parseCommandWithNonSpace('>help', mockCommands)).toEqual({
+        alias: '>',
+        searchTerm: 'help',
+      });
+      expect(parseCommandWithNonSpace('>close tab', mockCommands)).toEqual({
+        alias: '>',
+        searchTerm: 'close tab',
+      });
+      expect(parseCommandWithNonSpace('closeall', mockCommands)).toEqual({
+        alias: 'close',
+        searchTerm: 'all',
+      });
+    });
+
+    it('should handle empty search term with immediate aliases', () => {
+      expect(parseCommandWithNonSpace('>', mockCommands)).toEqual({
+        alias: '>',
+        searchTerm: '',
+      });
+      expect(parseCommandWithNonSpace('close', mockCommands)).toEqual({
+        alias: 'close',
+        searchTerm: '',
+      });
+    });
+
+    it('should fall back to space-based parsing for space-required aliases', () => {
+      expect(parseCommandWithNonSpace('t github', mockCommands)).toEqual({
+        alias: 't',
+        searchTerm: 'github',
+      });
+      expect(parseCommandWithNonSpace('history search', mockCommands)).toEqual({
+        alias: 'history',
+        searchTerm: 'search',
+      });
+    });
+
+    it('should return no alias when no match is found', () => {
+      expect(parseCommandWithNonSpace('xyz search', mockCommands)).toEqual({
+        alias: 'xyz',
+        searchTerm: 'search',
+      });
+    });
+
+    it('should handle case insensitive matching', () => {
+      expect(parseCommandWithNonSpace('>HELP', mockCommands)).toEqual({
+        alias: '>',
+        searchTerm: 'HELP',
+      });
+      expect(parseCommandWithNonSpace('CLOSE all', mockCommands)).toEqual({
+        alias: 'close',
+        searchTerm: 'all',
+      });
     });
   });
 

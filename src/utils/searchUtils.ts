@@ -32,6 +32,33 @@ export function parseCommand(query: string): {
 }
 
 /**
+ * Utility function to parse command from query with support for immediate aliases
+ */
+export function parseCommandWithNonSpace(
+  query: string,
+  commands: Array<{ alias?: string[]; immediateAlias?: boolean }>
+): {
+  alias?: string;
+  searchTerm: string;
+} {
+  // First check for immediate aliases (those that don't require a space)
+  const immediateMatch = commands
+    .filter((command) => command.alias && command.immediateAlias === true)
+    .flatMap((command) => command.alias!.map((alias) => ({ command, alias })))
+    .find(({ alias }) => query.toLowerCase().startsWith(alias.toLowerCase()));
+
+  if (immediateMatch) {
+    return {
+      alias: immediateMatch.alias,
+      searchTerm: query.substring(immediateMatch.alias.length).trim(),
+    };
+  }
+
+  // Fall back to standard space-based parsing
+  return parseCommand(query);
+}
+
+/**
  * Parses a full command ID into extension and command parts
  */
 export function parseCommandId(fullCommandId: string): {

@@ -10,8 +10,8 @@ import {
   createEmptyResult,
   createErrorResult,
   createSuccessResult,
-  parseCommand,
   parseCommandId,
+  parseCommandWithNonSpace,
   safeSearchRequest,
 } from '@/utils/searchUtils';
 
@@ -82,8 +82,11 @@ export async function performSearch(
     return createEmptyResult();
   }
 
-  // Parse command from query
-  const { alias, searchTerm } = parseCommand(query);
+  // Parse command from query with support for non-space aliases
+  const { alias, searchTerm } = parseCommandWithNonSpace(
+    query,
+    availableCommands
+  );
 
   try {
     // Check if alias matches a specific command

@@ -53,6 +53,7 @@ class CoreExtension extends BaseExtension {
       description: 'Search for available commands',
       alias: [...CORE_ALIASES.SEARCH_COMMANDS],
       type: CoreCommandType.SEARCH,
+      immediateAlias: true,
     },
   ];
 

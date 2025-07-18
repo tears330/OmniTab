@@ -30,6 +30,7 @@ export interface BaseCommand {
   alias?: string[]; // e.g., ['t', 'tab'] for tab search
   icon?: string;
   type: CommandType;
+  immediateAlias?: boolean; // Whether the alias triggers immediately without requiring a space (default: false)
 }
 
 // Search command - returns results based on query
