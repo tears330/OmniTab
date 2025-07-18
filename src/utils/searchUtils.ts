@@ -59,6 +59,13 @@ export function parseCommandWithNonSpace(
 }
 
 /**
+ * Builds a full command ID from extension and command IDs
+ */
+export function buildCommandId(extensionId: string, commandId: string): string {
+  return `${extensionId}.${commandId}`;
+}
+
+/**
  * Parses a full command ID into extension and command parts
  */
 export function parseCommandId(fullCommandId: string): {

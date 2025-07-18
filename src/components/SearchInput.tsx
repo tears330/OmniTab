@@ -24,7 +24,7 @@ export default function SearchInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={onKeyDown}
-        placeholder='Type to search or use shortcuts: > (commands), t (tabs), h (history), b (bookmarks)'
+        placeholder='Search tabs, history, bookmarks • Try: "?" for help, ">" for commands, "t" for tabs'
         className='w-full border-0 bg-transparent text-lg text-gray-900 placeholder-gray-400 focus:outline-none dark:text-gray-100 dark:placeholder-gray-500'
         autoComplete='off'
         spellCheck={false}

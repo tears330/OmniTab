@@ -41,7 +41,7 @@ export const CORE_MESSAGES = {
 } as const;
 
 export const CORE_ALIASES = {
-  HELP: ['?', 'help'],
+  HELP: ['?'],
   RELOAD: ['reload'],
   SEARCH_COMMANDS: ['>'],
 } as const;

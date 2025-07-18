@@ -6,12 +6,7 @@ import type {
 
 import { BaseExtension, ExtensionRegistry } from '@/services/extensionRegistry';
 
-import {
-  getCommands,
-  handleSearchCommands,
-  reloadExtensions,
-  showHelp,
-} from './actions';
+import { getCommands, handleSearchCommands, reloadExtensions } from './actions';
 import {
   CORE_ALIASES,
   CORE_EXTENSION_DESCRIPTION,
@@ -21,7 +16,7 @@ import {
   CoreCommandId,
   CoreCommandType,
 } from './constants';
-import { searchCommands } from './search';
+import { handleCoreSearch } from './search';
 
 class CoreExtension extends BaseExtension {
   id = CORE_EXTENSION_ID;
@@ -36,9 +31,10 @@ class CoreExtension extends BaseExtension {
     {
       id: CoreCommandId.HELP,
       name: 'Help',
-      description: 'Show available commands and shortcuts',
+      description: 'Show available search commands',
       alias: [...CORE_ALIASES.HELP],
-      type: CoreCommandType.ACTION,
+      type: CoreCommandType.SEARCH,
+      immediateAlias: true,
     },
     {
       id: CoreCommandId.RELOAD,
@@ -62,7 +58,11 @@ class CoreExtension extends BaseExtension {
     commandId: string,
     payload: SearchPayload
   ): Promise<SearchResponse> {
-    if (commandId !== CoreCommandId.SEARCH_COMMANDS) {
+    // Validate command ID
+    if (
+      commandId !== CoreCommandId.SEARCH_COMMANDS &&
+      commandId !== CoreCommandId.HELP
+    ) {
       return {
         success: false,
         error: CORE_MESSAGES.UNKNOWN_COMMAND(commandId),
@@ -72,8 +72,8 @@ class CoreExtension extends BaseExtension {
     const registry = ExtensionRegistry.getInstance();
     const allCommands = registry.getAllCommands();
 
-    // Use the searchCommands function to filter and convert
-    const results = searchCommands(payload.query, allCommands);
+    // Use the centralized search handler
+    const results = handleCoreSearch(commandId, payload.query, allCommands);
 
     return {
       success: true,
@@ -85,9 +85,6 @@ class CoreExtension extends BaseExtension {
   async handleAction(commandId: string): Promise<ExtensionResponse> {
     try {
       switch (commandId) {
-        case CoreCommandId.HELP:
-          return showHelp();
-
         case CoreCommandId.RELOAD:
           return reloadExtensions();
 

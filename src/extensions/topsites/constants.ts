@@ -17,7 +17,7 @@ export enum TopSitesCommandType {
 }
 
 export const TOPSITES_ALIASES = {
-  SEARCH: ['topsites', 'top', 'ts', 'sites'],
+  SEARCH: ['top'],
 } as const;
 
 export const TOPSITES_MESSAGES = {

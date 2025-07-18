@@ -1,6 +1,14 @@
 import type { Command, SearchResult } from '@/types/extension';
 
-import { ActionLabel, ActionShortcut, SearchResultType } from './constants';
+import { buildCommandId } from '@/utils/searchUtils';
+
+import {
+  ActionLabel,
+  ActionShortcut,
+  CORE_EXTENSION_ID,
+  CoreCommandId,
+  SearchResultType,
+} from './constants';
 
 /**
  * Converts a command to a search result
@@ -40,4 +48,66 @@ export function searchCommands(
   );
 
   return matchingCommands.map(commandToSearchResult);
+}
+
+/**
+ * Searches for help commands (search type commands only)
+ */
+export function searchHelpCommands(
+  query: string,
+  commands: Command[]
+): SearchResult[] {
+  // Only show results when query is empty
+  if (query.trim() !== '') {
+    return [];
+  }
+
+  // Build the full help command ID
+  const helpCommandId = buildCommandId(CORE_EXTENSION_ID, CoreCommandId.HELP);
+
+  // Filter to only search commands, exclude self
+  const searchTypeCommands = commands.filter(
+    (cmd) => cmd.type === 'search' && cmd.id !== helpCommandId
+  );
+
+  // Create results with alias as title
+  return searchTypeCommands.map((cmd) => {
+    const [primaryAlias] = cmd.alias || [];
+    return {
+      id: cmd.id,
+      title: primaryAlias || cmd.name,
+      description: cmd.description || '',
+      icon: cmd.icon,
+      type: SearchResultType.COMMAND,
+      actions: [
+        {
+          id: ActionLabel.SELECT.toLowerCase(),
+          label: ActionLabel.SELECT,
+          shortcut: ActionShortcut.ENTER,
+          primary: true,
+        },
+      ],
+      metadata: { command: cmd },
+    };
+  });
+}
+
+/**
+ * Handles core extension search based on command ID
+ */
+export function handleCoreSearch(
+  commandId: string,
+  query: string,
+  commands: Command[]
+): SearchResult[] {
+  switch (commandId) {
+    case CoreCommandId.SEARCH_COMMANDS:
+      return searchCommands(query, commands);
+
+    case CoreCommandId.HELP:
+      return searchHelpCommands(query, commands);
+
+    default:
+      return [];
+  }
 }
