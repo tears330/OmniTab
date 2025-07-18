@@ -16,6 +16,7 @@ import {
   closeOtherTabs,
   closeTab,
   closeTabGroup,
+  getCurrentActiveTab,
   groupTabsByDomain,
   muteTab,
   pinTab,
@@ -134,10 +135,7 @@ class TabExtension extends BaseExtension {
         case TabCommandId.CLOSE_GROUP:
           // If no specific tab is provided, get the current active tab
           if (!payload.resultId) {
-            const [activeTab] = await chrome.tabs.query({
-              active: true,
-              currentWindow: true,
-            });
+            const activeTab = await getCurrentActiveTab();
             if (activeTab?.id) {
               return closeTabGroup(activeTab.id);
             }
@@ -154,10 +152,7 @@ class TabExtension extends BaseExtension {
         case TabCommandId.CLOSE_OTHER_GROUPS:
           // If no specific tab is provided, get the current active tab
           if (!payload.resultId) {
-            const [activeTab] = await chrome.tabs.query({
-              active: true,
-              currentWindow: true,
-            });
+            const activeTab = await getCurrentActiveTab();
             if (activeTab?.id) {
               return closeOtherTabGroups(activeTab.id);
             }
@@ -174,10 +169,7 @@ class TabExtension extends BaseExtension {
         case TabCommandId.CLOSE_OTHER_TABS:
           // If no specific tab is provided, get the current active tab
           if (!payload.resultId) {
-            const [activeTab] = await chrome.tabs.query({
-              active: true,
-              currentWindow: true,
-            });
+            const activeTab = await getCurrentActiveTab();
             if (activeTab?.id) {
               return closeOtherTabs(activeTab.id);
             }
@@ -205,10 +197,10 @@ class TabExtension extends BaseExtension {
                 return closeTab(tabId);
 
               case TabActionId.MUTE:
-                return muteTab(tabId, Boolean(payload.metadata?.muted));
+                return muteTab(tabId, !payload.metadata?.muted);
 
               case TabActionId.PIN:
-                return pinTab(tabId, Boolean(payload.metadata?.pinned));
+                return pinTab(tabId, !payload.metadata?.pinned);
 
               case TabActionId.CLOSE_OTHERS:
                 return closeOtherTabs(tabId);

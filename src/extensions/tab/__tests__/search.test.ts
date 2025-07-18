@@ -302,5 +302,172 @@ describe('Tab Extension Search', () => {
         muted: false,
       });
     });
+
+    it('should handle muted tab metadata', () => {
+      const mockTab: chrome.tabs.Tab = {
+        id: 123,
+        title: 'Muted Tab',
+        url: 'https://example.com',
+        windowId: 456,
+        active: false,
+        pinned: false,
+        audible: false,
+        incognito: false,
+        index: 0,
+        highlighted: false,
+        selected: false,
+        discarded: false,
+        autoDiscardable: true,
+        groupId: -1,
+        mutedInfo: { muted: true },
+      };
+
+      const result = tabToSearchResult(mockTab);
+
+      expect(result.metadata?.muted).toBe(true);
+    });
+
+    it('should handle tab with missing ID', () => {
+      const mockTab: chrome.tabs.Tab = {
+        id: undefined,
+        title: 'Tab without ID',
+        url: 'https://example.com',
+        windowId: 456,
+        active: false,
+        pinned: false,
+        audible: false,
+        incognito: false,
+        index: 0,
+        highlighted: false,
+        selected: false,
+        discarded: false,
+        autoDiscardable: true,
+        groupId: -1,
+      };
+
+      const result = tabToSearchResult(mockTab);
+
+      expect(result.id).toBe('tab-undefined');
+    });
+
+    it('should handle actions correctly', () => {
+      const mockTab: chrome.tabs.Tab = {
+        id: 123,
+        title: 'Test Tab',
+        url: 'https://test.com',
+        windowId: 456,
+        active: false,
+        pinned: false,
+        audible: false,
+        incognito: false,
+        index: 0,
+        highlighted: false,
+        selected: false,
+        discarded: false,
+        autoDiscardable: true,
+        groupId: -1,
+      };
+
+      const result = tabToSearchResult(mockTab);
+
+      expect(result.actions).toHaveLength(8);
+      expect(result.actions[0]).toEqual({
+        id: TabActionId.SWITCH,
+        label: TabActionLabel.SWITCH_TO_TAB,
+        shortcut: TabActionShortcut.ENTER,
+        primary: true,
+      });
+      expect(result.actions[1]).toEqual({
+        id: TabActionId.CLOSE,
+        label: TabActionLabel.CLOSE_TAB,
+        shortcut: TabActionShortcut.CLOSE,
+      });
+    });
+  });
+
+  describe('searchTabs edge cases', () => {
+    it('should handle chrome.tabs.query error', async () => {
+      mockChrome.tabs.query.mockImplementation(() => {
+        throw new Error('Chrome API error');
+      });
+
+      await expect(searchTabs('test')).rejects.toThrow('Chrome API error');
+    });
+
+    it('should handle special characters in search query', async () => {
+      const mockTabs = [
+        { id: 1, title: 'Tab with [brackets]', url: 'https://example.com' },
+        { id: 2, title: 'Tab with (parentheses)', url: 'https://google.com' },
+        { id: 3, title: 'Tab with *asterisk*', url: 'https://github.com' },
+      ];
+
+      mockChrome.tabs.query.mockImplementation((_query, callback) => {
+        callback(mockTabs);
+      });
+
+      const result = await searchTabs('[brackets]');
+
+      expect(result).toHaveLength(1);
+      expect(result[0].title).toBe('Tab with [brackets]');
+    });
+
+    it('should handle very long search queries', async () => {
+      const mockTabs = [
+        { id: 1, title: 'Short tab', url: 'https://example.com' },
+        {
+          id: 2,
+          title:
+            'Very long tab title that contains many words and should still match',
+          url: 'https://verylongdomainname.com',
+        },
+      ];
+
+      mockChrome.tabs.query.mockImplementation((_query, callback) => {
+        callback(mockTabs);
+      });
+
+      const longQuery = 'very long tab title that contains many words';
+      const result = await searchTabs(longQuery);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe(2);
+    });
+
+    it('should handle unicode characters in search', async () => {
+      const mockTabs = [
+        { id: 1, title: 'Tab with émojis 🚀', url: 'https://example.com' },
+        { id: 2, title: 'Tab with ñ and á', url: 'https://español.com' },
+        { id: 3, title: 'Regular tab', url: 'https://english.com' },
+      ];
+
+      mockChrome.tabs.query.mockImplementation((_query, callback) => {
+        callback(mockTabs);
+      });
+
+      const result = await searchTabs('émojis');
+
+      expect(result).toHaveLength(1);
+      expect(result[0].title).toBe('Tab with émojis 🚀');
+    });
+
+    it('should handle empty tab array', async () => {
+      mockChrome.tabs.query.mockImplementation((_query, callback) => {
+        callback([]);
+      });
+
+      const result = await searchTabs('anything');
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('should handle null callback response', async () => {
+      mockChrome.tabs.query.mockImplementation((_query, callback) => {
+        callback(null as any);
+      });
+
+      const result = await searchTabs('test');
+
+      expect(result).toEqual([]);
+    });
   });
 });
