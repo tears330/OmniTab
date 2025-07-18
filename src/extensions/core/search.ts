@@ -1,11 +1,6 @@
 import type { Command, SearchResult } from '@/types/extension';
 
-import {
-  ActionLabel,
-  ActionShortcut,
-  CoreCommandType,
-  SearchResultType,
-} from './constants';
+import { ActionLabel, ActionShortcut, SearchResultType } from './constants';
 
 /**
  * Converts a command to a search result
@@ -39,10 +34,9 @@ export function searchCommands(
   const lowerQuery = query.toLowerCase();
   const matchingCommands = commands.filter(
     (cmd) =>
-      cmd.type !== CoreCommandType.SEARCH &&
-      (cmd.name.toLowerCase().includes(lowerQuery) ||
-        cmd.description?.toLowerCase().includes(lowerQuery) ||
-        cmd.alias?.some((a) => a.includes(lowerQuery)))
+      cmd.name.toLowerCase().includes(lowerQuery) ||
+      cmd.description?.toLowerCase().includes(lowerQuery) ||
+      cmd.alias?.some((a) => a.includes(lowerQuery))
   );
 
   return matchingCommands.map(commandToSearchResult);
