@@ -1,6 +1,12 @@
 import type { SearchBroker } from '@/types';
 import type { Command, SearchResult } from '@/types/extension';
 
+import { BookmarkResultType } from '@/extensions/bookmark/constants';
+import { SearchResultType } from '@/extensions/core/constants';
+import { HistoryResultType } from '@/extensions/history/constants';
+import { TabResultType } from '@/extensions/tab/constants';
+import { TopSitesResultType } from '@/extensions/topsites/constants';
+
 import {
   performSearch,
   searchAllExtensions,
@@ -303,6 +309,343 @@ describe('searchService', () => {
         loading: false,
         error: 'Network error',
       });
+    });
+  });
+
+  describe('searchAllExtensions - Fuse.js integration', () => {
+    it('should return results without sorting for empty query', async () => {
+      const mockResults: SearchResult[] = [
+        {
+          id: 'tab-1',
+          title: 'GitHub',
+          description: 'github.com',
+          type: TabResultType.TAB,
+          actions: [],
+        },
+        {
+          id: 'history-1',
+          title: 'Stack Overflow',
+          description: 'stackoverflow.com',
+          type: HistoryResultType.HISTORY,
+          actions: [],
+        },
+      ];
+
+      (mockBroker.sendSearchRequest as jest.Mock).mockResolvedValue({
+        success: true,
+        data: mockResults,
+      });
+
+      const results = await searchAllExtensions('', mockCommands, mockBroker);
+
+      expect(results).toEqual(mockResults);
+      expect(mockBroker.sendSearchRequest).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(String),
+        ''
+      );
+    });
+
+    it('should sort results by type priority: tab > history > bookmark > command', async () => {
+      const mockResults: SearchResult[] = [
+        {
+          id: 'command-1',
+          title: 'Test Command',
+          description: 'A test command',
+          type: SearchResultType.COMMAND,
+          actions: [],
+        },
+        {
+          id: 'bookmark-1',
+          title: 'Test Bookmark',
+          description: 'A test bookmark',
+          type: BookmarkResultType.BOOKMARK,
+          actions: [],
+        },
+        {
+          id: 'history-1',
+          title: 'Test History',
+          description: 'A test history item',
+          type: HistoryResultType.HISTORY,
+          actions: [],
+        },
+        {
+          id: 'tab-1',
+          title: 'Test Tab',
+          description: 'A test tab',
+          type: TabResultType.TAB,
+          actions: [],
+        },
+      ];
+
+      (mockBroker.sendSearchRequest as jest.Mock).mockResolvedValue({
+        success: true,
+        data: mockResults,
+      });
+
+      const results = await searchAllExtensions(
+        'test',
+        mockCommands,
+        mockBroker
+      );
+
+      // Results should be sorted by type priority: tab, history, bookmark, command
+      expect(results[0].type).toBe(TabResultType.TAB);
+      expect(results[1].type).toBe(HistoryResultType.HISTORY);
+      expect(results[2].type).toBe(BookmarkResultType.BOOKMARK);
+      expect(results[3].type).toBe(SearchResultType.COMMAND);
+    });
+
+    it('should handle fuzzy search with Fuse.js', async () => {
+      const mockResults: SearchResult[] = [
+        {
+          id: 'tab-1',
+          title: 'GitHub Repository',
+          description: 'github.com/user/repo',
+          type: TabResultType.TAB,
+          actions: [],
+        },
+        {
+          id: 'tab-2',
+          title: 'GitLab Project',
+          description: 'gitlab.com/user/project',
+          type: TabResultType.TAB,
+          actions: [],
+        },
+        {
+          id: 'tab-3',
+          title: 'Unrelated Page',
+          description: 'example.com/page',
+          type: TabResultType.TAB,
+          actions: [],
+        },
+      ];
+
+      (mockBroker.sendSearchRequest as jest.Mock).mockResolvedValue({
+        success: true,
+        data: mockResults,
+      });
+
+      const results = await searchAllExtensions(
+        'git',
+        mockCommands,
+        mockBroker
+      );
+
+      // Should return results that match "git" fuzzy search
+      // Note: Fuse.js might filter out results that don't match well enough
+      expect(results.length).toBeGreaterThanOrEqual(1);
+
+      // GitHub and GitLab should match "git" search
+      const githubResult = results.find((r) => r.title.includes('GitHub'));
+      const gitlabResult = results.find((r) => r.title.includes('GitLab'));
+
+      expect(githubResult || gitlabResult).toBeDefined();
+    });
+
+    it('should remove duplicate results by ID', async () => {
+      const duplicateResults: SearchResult[] = [
+        {
+          id: 'duplicate-1',
+          title: 'Duplicate Item',
+          description: 'First occurrence',
+          type: TabResultType.TAB,
+          actions: [],
+        },
+        {
+          id: 'duplicate-1', // Same ID
+          title: 'Duplicate Item',
+          description: 'Second occurrence',
+          type: TabResultType.TAB,
+          actions: [],
+        },
+        {
+          id: 'unique-1',
+          title: 'Unique Item',
+          description: 'Unique occurrence',
+          type: TabResultType.TAB,
+          actions: [],
+        },
+      ];
+
+      (mockBroker.sendSearchRequest as jest.Mock).mockResolvedValue({
+        success: true,
+        data: duplicateResults,
+      });
+
+      const results = await searchAllExtensions(
+        'duplicate',
+        mockCommands,
+        mockBroker
+      );
+
+      expect(results).toHaveLength(2); // Should remove one duplicate
+      expect(results.find((r) => r.id === 'duplicate-1')).toBeDefined();
+      expect(results.find((r) => r.id === 'unique-1')).toBeDefined();
+    });
+
+    it('should handle unknown result types with lowest priority', async () => {
+      const mockResults: SearchResult[] = [
+        {
+          id: 'unknown-1',
+          title: 'Test Unknown Type',
+          description: 'Test unknown type result',
+          type: 'unknown-type',
+          actions: [],
+        },
+        {
+          id: 'tab-1',
+          title: 'Test Tab Result',
+          description: 'Test tab result',
+          type: TabResultType.TAB,
+          actions: [],
+        },
+      ];
+
+      (mockBroker.sendSearchRequest as jest.Mock).mockResolvedValue({
+        success: true,
+        data: mockResults,
+      });
+
+      const results = await searchAllExtensions(
+        'test',
+        mockCommands,
+        mockBroker
+      );
+
+      // Both should be present since both have "test" in title
+      expect(results.length).toBeGreaterThanOrEqual(1);
+      const tabResult = results.find((r) => r.type === TabResultType.TAB);
+
+      expect(tabResult).toBeDefined();
+      // Tab should have higher priority than unknown type
+      const tabIndex = results.findIndex((r) => r.type === TabResultType.TAB);
+      const unknownIndex = results.findIndex((r) => r.type === 'unknown-type');
+
+      expect(tabIndex).toBeGreaterThanOrEqual(0);
+      expect(unknownIndex === -1 || tabIndex < unknownIndex).toBe(true);
+    });
+
+    it('should handle TopSites result type with correct priority', async () => {
+      const mockResults: SearchResult[] = [
+        {
+          id: 'topsites-1',
+          title: 'Test Top Site',
+          description: 'A test top site',
+          type: TopSitesResultType.TOP_SITE,
+          actions: [],
+        },
+        {
+          id: 'command-1',
+          title: 'Test Command',
+          description: 'A test command',
+          type: SearchResultType.COMMAND,
+          actions: [],
+        },
+      ];
+
+      (mockBroker.sendSearchRequest as jest.Mock).mockResolvedValue({
+        success: true,
+        data: mockResults,
+      });
+
+      const results = await searchAllExtensions(
+        'test',
+        mockCommands,
+        mockBroker
+      );
+
+      // Command should come before TopSites (priority 4 vs 5)
+      expect(results.length).toBeGreaterThan(0);
+      const commandResult = results.find(
+        (r) => r.type === SearchResultType.COMMAND
+      );
+      const topSitesResult = results.find(
+        (r) => r.type === TopSitesResultType.TOP_SITE
+      );
+
+      // Both should be present since both have "test" in title
+      expect(commandResult).toBeDefined();
+      expect(topSitesResult).toBeDefined();
+
+      // Command should have higher priority (lower index) than TopSites
+      expect(results.indexOf(commandResult!)).toBeLessThan(
+        results.indexOf(topSitesResult!)
+      );
+    });
+
+    it('should sort by Fuse score when types have same priority', async () => {
+      const mockResults: SearchResult[] = [
+        {
+          id: 'tab-1',
+          title: 'Somewhat matching title',
+          description: 'description',
+          type: TabResultType.TAB,
+          actions: [],
+        },
+        {
+          id: 'tab-2',
+          title: 'Perfect test match',
+          description: 'description',
+          type: TabResultType.TAB,
+          actions: [],
+        },
+      ];
+
+      (mockBroker.sendSearchRequest as jest.Mock).mockResolvedValue({
+        success: true,
+        data: mockResults,
+      });
+
+      const results = await searchAllExtensions(
+        'test',
+        mockCommands,
+        mockBroker
+      );
+
+      // Both are tabs (same type priority), so should sort by Fuse relevance
+      expect(results).toHaveLength(2);
+      expect(results[0].title).toBe('Perfect test match'); // Better match should come first
+    });
+
+    it('should handle whitespace-only queries', async () => {
+      const mockResults: SearchResult[] = [
+        {
+          id: 'tab-1',
+          title: 'Tab 1',
+          description: 'description',
+          type: TabResultType.TAB,
+          actions: [],
+        },
+      ];
+
+      (mockBroker.sendSearchRequest as jest.Mock).mockResolvedValue({
+        success: true,
+        data: mockResults,
+      });
+
+      const results = await searchAllExtensions(
+        '   ',
+        mockCommands,
+        mockBroker
+      );
+
+      expect(results).toEqual(mockResults); // Should return unsorted results
+    });
+
+    it('should handle empty results from all extensions', async () => {
+      (mockBroker.sendSearchRequest as jest.Mock).mockResolvedValue({
+        success: true,
+        data: [],
+      });
+
+      const results = await searchAllExtensions(
+        'nonexistent',
+        mockCommands,
+        mockBroker
+      );
+
+      expect(results).toHaveLength(0);
     });
   });
 });
