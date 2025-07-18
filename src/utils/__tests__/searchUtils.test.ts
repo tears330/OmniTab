@@ -1,4 +1,5 @@
 import {
+  buildCommandId,
   createEmptyResult,
   createErrorResult,
   createSuccessResult,
@@ -144,6 +145,18 @@ describe('searchUtils', () => {
         alias: 'close',
         searchTerm: 'all',
       });
+    });
+  });
+
+  describe('buildCommandId', () => {
+    it('should build command ID correctly', () => {
+      const result = buildCommandId('extension', 'command');
+      expect(result).toBe('extension.command');
+    });
+
+    it('should handle command IDs with dots', () => {
+      const result = buildCommandId('extension', 'sub.command');
+      expect(result).toBe('extension.sub.command');
     });
   });
 

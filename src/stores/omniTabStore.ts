@@ -101,10 +101,29 @@ export const useOmniTabStore = create<OmniTabStore>()((set, get) => ({
       false
     ),
 
-  setQuery: (query: string) => set({ query, selectedIndex: 0 }, false),
+  setQuery: (query: string) =>
+    set(
+      {
+        query,
+        selectedIndex: 0,
+        isActionsMenuOpen: false,
+        actionsMenuSelectedIndex: 0,
+      },
+      false
+    ),
 
   setResults: (results: SearchResult[]) =>
-    set({ results, selectedIndex: 0, loading: false, error: undefined }, false),
+    set(
+      {
+        results,
+        selectedIndex: 0,
+        loading: false,
+        error: undefined,
+        isActionsMenuOpen: false,
+        actionsMenuSelectedIndex: 0,
+      },
+      false
+    ),
 
   setLoading: (loading: boolean) => set({ loading }, false),
 
@@ -114,7 +133,14 @@ export const useOmniTabStore = create<OmniTabStore>()((set, get) => ({
   setSelectedIndex: (index: number) => {
     const state = get();
     const clampedIndex = clamp(index, 0, Math.max(0, state.results.length - 1));
-    set({ selectedIndex: clampedIndex }, false);
+    set(
+      {
+        selectedIndex: clampedIndex,
+        isActionsMenuOpen: false,
+        actionsMenuSelectedIndex: 0,
+      },
+      false
+    );
   },
 
   setActiveExtension: (payload?: { extensionId: string; commandId: string }) =>
@@ -130,7 +156,16 @@ export const useOmniTabStore = create<OmniTabStore>()((set, get) => ({
     set({ availableCommands: commands }, false),
 
   setInitialResults: (results: SearchResult[]) =>
-    set({ results, loading: false, error: undefined }, false),
+    set(
+      {
+        results,
+        loading: false,
+        error: undefined,
+        isActionsMenuOpen: false,
+        actionsMenuSelectedIndex: 0,
+      },
+      false
+    ),
 
   reset: () =>
     set(
@@ -226,7 +261,14 @@ export const useOmniTabStore = create<OmniTabStore>()((set, get) => ({
   performSearch: debounce(async (query: string) => {
     const { availableCommands, loadInitialResults } = get();
 
-    set({ selectedIndex: 0 }, false);
+    set(
+      {
+        selectedIndex: 0,
+        isActionsMenuOpen: false,
+        actionsMenuSelectedIndex: 0,
+      },
+      false
+    );
 
     try {
       if (!query.trim()) {
@@ -289,11 +331,22 @@ export const useOmniTabStore = create<OmniTabStore>()((set, get) => ({
       const [extensionId, commandId] = command.id.split('.');
 
       if (command.type === 'search') {
+        // Set query to the appropriate alias based on the command
+        let queryAlias = '';
+        if (command.alias && command.alias.length > 0) {
+          // Use the first alias, add space for non-immediate aliases
+          const [firstAlias] = command.alias;
+          queryAlias = firstAlias;
+          if (!command.immediateAlias) {
+            queryAlias += ' ';
+          }
+        }
+
         set(
           {
             activeExtension: extensionId,
             activeCommand: commandId,
-            query: '',
+            query: queryAlias,
             results: [],
           },
           false

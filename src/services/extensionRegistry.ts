@@ -8,6 +8,8 @@ import type {
   SearchResponse,
 } from '@/types/extension';
 
+import { buildCommandId } from '@/utils/searchUtils';
+
 import { getBackgroundBroker } from './messageBroker';
 
 // Abstract base class for extensions
@@ -114,7 +116,7 @@ export class ExtensionRegistry {
         ...extension.commands.map((cmd) => ({
           ...cmd,
           // Add extension context to commands
-          id: `${extension.id}.${cmd.id}`,
+          id: buildCommandId(extension.id, cmd.id),
           icon: cmd.icon || extension.icon,
         }))
       );

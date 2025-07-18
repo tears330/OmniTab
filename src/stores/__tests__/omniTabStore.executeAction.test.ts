@@ -76,6 +76,7 @@ describe('omniTabStore - executeAction', () => {
         name: 'Search Tabs',
         description: 'Search tabs',
         type: 'search',
+        alias: ['t', 'tab'],
       };
 
       const mockResult: SearchResult = {
@@ -96,6 +97,70 @@ describe('omniTabStore - executeAction', () => {
 
       const state = useOmniTabStore.getState();
       expect(state.activeExtension).toBe('tab');
+      expect(state.activeCommand).toBe('search');
+      expect(state.query).toBe('t ');
+      expect(state.results).toEqual([]);
+    });
+
+    it('should handle search command with immediate alias', async () => {
+      const mockCommand: Command = {
+        id: 'core.search',
+        name: 'Search Commands',
+        description: 'Search commands',
+        type: 'search',
+        alias: ['>'],
+        immediateAlias: true,
+      };
+
+      const mockResult: SearchResult = {
+        id: 'cmd-core-search',
+        title: 'Search Commands',
+        description: 'Search commands',
+        type: 'command',
+        actions: [],
+        metadata: { command: mockCommand },
+      };
+
+      // Set up results
+      useOmniTabStore.getState().setResults([mockResult]);
+
+      await useOmniTabStore
+        .getState()
+        .executeAction('cmd-core-search', 'select');
+
+      const state = useOmniTabStore.getState();
+      expect(state.activeExtension).toBe('core');
+      expect(state.activeCommand).toBe('search');
+      expect(state.query).toBe('>');
+      expect(state.results).toEqual([]);
+    });
+
+    it('should handle search command without alias', async () => {
+      const mockCommand: Command = {
+        id: 'test.search',
+        name: 'Test Search',
+        description: 'Test search command',
+        type: 'search',
+      };
+
+      const mockResult: SearchResult = {
+        id: 'cmd-test-search',
+        title: 'Test Search',
+        description: 'Test search command',
+        type: 'command',
+        actions: [],
+        metadata: { command: mockCommand },
+      };
+
+      // Set up results
+      useOmniTabStore.getState().setResults([mockResult]);
+
+      await useOmniTabStore
+        .getState()
+        .executeAction('cmd-test-search', 'select');
+
+      const state = useOmniTabStore.getState();
+      expect(state.activeExtension).toBe('test');
       expect(state.activeCommand).toBe('search');
       expect(state.query).toBe('');
       expect(state.results).toEqual([]);

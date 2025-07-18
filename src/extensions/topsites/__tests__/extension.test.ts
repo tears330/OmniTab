@@ -57,7 +57,7 @@ describe('TopSitesExtension', () => {
       expect(searchCommand.id).toBe(TopSitesCommandId.SEARCH);
       expect(searchCommand.name).toBe('Search Top Sites');
       expect(searchCommand.description).toBe('Search your most visited sites');
-      expect(searchCommand.alias).toEqual(['topsites', 'top', 'ts', 'sites']);
+      expect(searchCommand.alias).toEqual(['top']);
       expect(searchCommand.type).toBe('search');
     });
   });
