@@ -3,7 +3,7 @@
   "displayName": "OmniTab",
   "description": "Spotlight for your browser - Instantly search, switch, and manage tabs with a keyboard-first command palette.",
   "private": true,
-  "version": "0.6.1",
+  "version": "0.7.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
