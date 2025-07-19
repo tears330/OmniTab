@@ -51,3 +51,16 @@ export async function handleSearchCommands(): Promise<ExtensionResponse> {
     data: { message: CORE_MESSAGES.SEARCH_COMMANDS_USAGE },
   };
 }
+
+/**
+ * Open OmniTab settings page
+ */
+export async function openSettings(): Promise<ExtensionResponse> {
+  // Open the options page in a new tab
+  chrome.tabs.create({ url: chrome.runtime.getURL('src/options/index.html') });
+
+  return {
+    success: true,
+    data: { message: CORE_MESSAGES.SETTINGS_OPENING },
+  };
+}

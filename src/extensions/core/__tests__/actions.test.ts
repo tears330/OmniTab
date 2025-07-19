@@ -3,6 +3,7 @@ import { ExtensionRegistry } from '@/services/extensionRegistry';
 import {
   getCommands,
   handleSearchCommands,
+  openSettings,
   reloadExtensions,
   showHelp,
 } from '../actions';
@@ -125,6 +126,40 @@ describe('Core Extension Actions', () => {
       expect(result).toEqual({
         success: true,
         data: { message: CORE_MESSAGES.SEARCH_COMMANDS_USAGE },
+      });
+    });
+  });
+
+  describe('openSettings', () => {
+    it('should create a new tab with settings URL', async () => {
+      mockChrome.runtime.getURL.mockReturnValue(
+        'chrome-extension://id/src/options/index.html'
+      );
+
+      const result = await openSettings();
+
+      expect(mockChrome.tabs.create).toHaveBeenCalledWith({
+        url: 'chrome-extension://id/src/options/index.html',
+      });
+      expect(result).toEqual({
+        success: true,
+        data: { message: CORE_MESSAGES.SETTINGS_OPENING },
+      });
+    });
+
+    it('should handle chrome API errors gracefully', async () => {
+      mockChrome.runtime.getURL.mockReturnValue(
+        'chrome-extension://id/src/options/index.html'
+      );
+      (mockChrome.runtime as any).lastError = {
+        message: 'Tab creation failed',
+      };
+
+      const result = await openSettings();
+
+      expect(result).toEqual({
+        success: true,
+        data: { message: CORE_MESSAGES.SETTINGS_OPENING },
       });
     });
   });
