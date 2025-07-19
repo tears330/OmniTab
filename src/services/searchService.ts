@@ -10,6 +10,7 @@ import Fuse from 'fuse.js';
 
 import { BookmarkResultType } from '@/extensions/bookmark/constants';
 import { SearchResultType } from '@/extensions/core/constants';
+import { commandToSearchResult } from '@/extensions/core/search';
 import { HistoryResultType } from '@/extensions/history/constants';
 import { TabResultType } from '@/extensions/tab/constants';
 import { TopSitesResultType } from '@/extensions/topsites/constants';
@@ -162,13 +163,21 @@ export async function performSearch(
 
       if (command) {
         const { extensionId, commandId } = parseCommandId(command.id);
-        const results = await searchExtension(
-          extensionId,
-          commandId,
-          searchTerm,
-          broker
-        );
-        return createSuccessResult(results, extensionId, commandId);
+
+        // Only search if it's a search command
+        if (command.type === 'search') {
+          const results = await searchExtension(
+            extensionId,
+            commandId,
+            searchTerm,
+            broker
+          );
+          return createSuccessResult(results, extensionId, commandId);
+        }
+
+        // For action commands, return the command as a result
+        const actionResult = commandToSearchResult(command);
+        return createSuccessResult([actionResult], extensionId, commandId);
       }
     }
 
