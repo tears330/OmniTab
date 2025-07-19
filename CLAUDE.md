@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 OmniTab is a keyboard-first tab manager Chrome extension that provides a Spotlight-like interface for searching and switching between browser tabs. Built with Vite, TypeScript, React, Tailwind CSS, and DaisyUI. The extension supports searching across tabs, browser history, bookmarks, and most visited sites with fuzzy matching and intelligent ranking.
 
+## Core Architectural Principle
+
+**Business Logic and Data Handling in Service Worker**: All business logic, data processing, and state management should be handled in the service worker (backend). The frontend should only be responsible for the view layer - rendering UI, handling user interactions, and displaying data. Communication between frontend and backend happens through message-based APIs to maintain clear separation of concerns.
+
 ## Extension-Based Architecture (New)
 
 OmniTab now uses a modular extension-based architecture where functionality is organized into pluggable extensions:
@@ -67,9 +71,9 @@ When creating new extensions, follow this modular pattern:
 - **Extension Registry** (`src/services/extensionRegistry.ts`) - Manages extension lifecycle and command routing
 - **Message Broker** (`src/services/messageBroker.ts`) - Handles communication between content and background scripts
 - **OmniTab Store** (`src/stores/omniTabStore.ts`) - Zustand store for global state management with debounced search and automatic initialization
-- **Settings System** - Comprehensive settings management with Chrome storage integration:
-  - `src/services/settingsService.ts` - Settings storage, validation, and change notifications
-  - `src/services/settingsManager.ts` - Settings application and theme management
+- **Settings System** - Unified settings management with clear frontend/backend separation:
+  - `src/services/settingsService.ts` - **Backend-only** unified settings service with Chrome storage integration
+  - `src/services/settingsBroker.ts` - **Frontend-only** message-based broker for settings communication
   - `src/types/settings.ts` - Settings schema and type definitions
 
 ## Key Commands
@@ -242,18 +246,19 @@ OmniTab supports multiple navigation methods for maximum accessibility:
 
 ### Settings System
 
-OmniTab includes a comprehensive settings system with Chrome storage integration and reactive updates:
+OmniTab includes a unified settings system with clear frontend/backend separation following the core architectural principle:
 
 #### **Settings Architecture**
 
-The settings system is built with a modular architecture:
+The settings system is built with a clean separation between frontend and backend:
 
-- **Settings Service** (`src/services/settingsService.ts`) - Core settings management with Chrome storage integration
-- **Settings Manager** (`src/services/settingsManager.ts`) - Settings application and theme management with system preference detection
-- **Settings Types** (`src/types/settings.ts`) - Complete type definitions and validation schemas
-- **Settings Hooks** - React hooks for reactive settings integration:
-  - `src/hooks/useSettings.ts` - Settings state management and updates
-  - `src/hooks/useTheme.ts` - Theme management with system preference detection
+- **Backend (Service Worker)**:
+  - **Settings Service** (`src/services/settingsService.ts`) - **Unified** settings service with Chrome storage integration, validation, theme resolution, and command management
+- **Frontend (Content/Options)**:
+  - **Settings Broker** (`src/services/settingsBroker.ts`) - Message-based communication broker for frontend settings operations
+  - **Settings Hooks** (`src/hooks/useSettings.ts`) - React hooks using the broker for reactive settings integration
+- **Shared**:
+  - **Settings Types** (`src/types/settings.ts`) - Complete type definitions and validation schemas
 
 #### **Settings Schema**
 
@@ -284,8 +289,9 @@ interface ExtensionSettings {
 
 #### **Settings Usage**
 
+**Backend (Service Worker)** - Direct service access:
+
 ```typescript
-// Using the settings service directly
 import { settingsService } from '@/services/settingsService';
 
 // Load settings
@@ -297,18 +303,25 @@ await settingsService.updateSettings('appearance', { theme: 'dark' });
 // Check if a command is enabled
 const isEnabled = await settingsService.isCommandEnabled('tab.search');
 
-// Using React hooks
+// Get resolved theme (system -> light/dark)
+const resolvedTheme = await SettingsService.getCurrentTheme();
+```
+
+**Frontend (Content/Options)** - Message-based broker:
+
+```typescript
 import { useSettings } from '@/hooks/useSettings';
-import { useTheme } from '@/hooks/useTheme';
 
 function MyComponent() {
-  const { settings, updateSettings } = useSettings();
-  const { theme, setTheme } = useTheme();
+  const { settings, updateTheme, setCommandEnabled, loading } = useSettings();
 
   return (
-    <div data-theme={theme}>
-      <button onClick={() => setTheme('dark')}>
+    <div data-theme={settings?.appearance.theme}>
+      <button onClick={() => updateTheme('dark')}>
         Switch to Dark Theme
+      </button>
+      <button onClick={() => setCommandEnabled('tab.search', false)}>
+        Disable Tab Search
       </button>
     </div>
   );
@@ -342,10 +355,10 @@ The project has comprehensive test coverage across all major components:
 - **Extensions**: Comprehensive testing for all extension types (core, tab, history, bookmark, topsites)
 - **Components**: React components tested with user interaction scenarios
 - **Utilities**: High coverage for search, keyboard, URL, and store utilities
-- **Services**: Extension registry, message broker, search service, and comprehensive settings system with Chrome storage integration
-- **Settings System**: Complete test coverage (55 tests total) including:
-  - Settings service with Chrome storage mocking and validation testing
-  - Settings manager with theme detection and error handling
+- **Services**: Extension registry, message broker, search service, and unified settings system with Chrome storage integration
+- **Settings System**: Complete test coverage including:
+  - Unified settings service with Chrome storage mocking and validation testing
+  - Message-based settings broker for frontend communication
   - Edge cases for service worker contexts and storage failures
   - Listener patterns and reactive updates
 - **Total Test Files**: 29 test files covering all major functionality
@@ -477,19 +490,27 @@ pnpm lint
 
 ### Settings System Integration
 
-When working with the settings system, follow these patterns:
+When working with the settings system, follow these patterns based on context:
 
-#### **Settings Service Usage**
+#### **Backend (Service Worker) Patterns**
 
-- **Always use the singleton**: Import `settingsService` instance, not the class
+- **Direct service access**: Import `settingsService` instance for direct operations
 - **Await async operations**: All settings operations are async due to Chrome storage
 - **Handle errors gracefully**: Use try-catch blocks for settings operations
 - **Use reactive patterns**: Leverage change listeners for real-time updates
+- **Initialize on startup**: Call `settingsService.initialize()` in background script
+
+#### **Frontend (Content/Options) Patterns**
+
+- **Message-based communication**: Always use `settingsBroker` or `useSettings` hook
+- **No direct service access**: Never import `settingsService` in frontend code
+- **React integration**: Use `useSettings` hook for reactive settings in components
+- **Loading states**: Handle loading and error states from broker operations
 
 #### **Theme Integration**
 
 - **Use data-theme attributes**: Apply themes via `data-theme="dark|light"` on component roots
-- **System preference detection**: Use `SettingsManager.getCurrentTheme()` for resolved theme values
+- **System preference detection**: Use `SettingsService.getCurrentTheme()` for resolved theme values (backend only)
 - **Store integration**: Theme is automatically loaded and managed in `omniTabStore`
 - **Tailwind configuration**: Dark mode uses class-based detection with `[data-theme="dark"]` selector
 
@@ -497,8 +518,7 @@ When working with the settings system, follow these patterns:
 
 - **Extension registry integration**: Commands are automatically filtered based on settings
 - **Default enabled**: New commands default to enabled unless explicitly disabled
-- **Batch operations**: Use `getEnabledCommands()` for bulk command filtering
-- **Settings updates**: Command changes trigger automatic re-registration
+- **Settings updates**: Command changes trigger automatic registry refresh via message system
 
 #### **Testing Settings**
 
@@ -506,3 +526,4 @@ When working with the settings system, follow these patterns:
 - **Test edge cases**: Include service worker contexts and storage failures
 - **Validate schemas**: Test settings validation and migration logic
 - **Mock window.matchMedia**: Use `Object.defineProperty` for theme detection tests
+- **Separate concerns**: Test backend service directly, frontend broker through message mocking

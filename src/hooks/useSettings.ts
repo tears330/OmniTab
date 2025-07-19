@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-import { settingsService } from '@/services/settingsService';
+import { settingsBroker } from '@/services/settingsBroker';
 import { ExtensionSettings, Theme } from '@/types/settings';
 
 /**
@@ -18,8 +18,11 @@ export default function useSettings() {
     // Load initial settings
     const loadSettings = async () => {
       try {
-        const loadedSettings = await settingsService.loadSettings();
+        const loadedSettings = await settingsBroker.getSettings();
         setSettings(loadedSettings);
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to load settings:', error);
       } finally {
         setLoading(false);
       }
@@ -28,35 +31,38 @@ export default function useSettings() {
     loadSettings();
 
     // Listen for settings changes
-    const handleSettingsChange = () => {
-      settingsService.getSettings().then(setSettings);
+    const handleSettingsChange = (newSettings: ExtensionSettings) => {
+      setSettings(newSettings);
     };
 
-    settingsService.addSettingsChangeListener(handleSettingsChange);
+    settingsBroker.addSettingsChangeListener(handleSettingsChange);
 
     return () => {
-      settingsService.removeSettingsChangeListener(handleSettingsChange);
+      settingsBroker.removeSettingsChangeListener(handleSettingsChange);
     };
   }, []);
 
   // Appearance settings
-  const changeTheme = useCallback(
-    async (theme: Theme) => {
-      if (!settings) return;
-
-      await settingsService.updateSettings('appearance', { theme });
-    },
-    [settings]
-  );
+  const changeTheme = useCallback(async (theme: Theme) => {
+    try {
+      await settingsBroker.updateTheme(theme);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to change theme:', error);
+    }
+  }, []);
 
   // Command settings
   const setCommandEnabled = useCallback(
     async (commandId: string, enabled: boolean) => {
-      if (!settings) return;
-
-      await settingsService.setCommandEnabled(commandId, enabled);
+      try {
+        await settingsBroker.setCommandEnabled(commandId, enabled);
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to set command enabled:', error);
+      }
     },
-    [settings]
+    []
   );
 
   const isCommandEnabled = useCallback(
@@ -70,7 +76,12 @@ export default function useSettings() {
 
   // Reset settings
   const resetSettings = useCallback(async () => {
-    await settingsService.resetSettings();
+    try {
+      await settingsBroker.resetSettings();
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to reset settings:', error);
+    }
   }, []);
 
   return {

@@ -18,7 +18,7 @@ export default function SettingField({
       className={`group overflow-visible rounded-2xl bg-white shadow-sm transition-all duration-200 hover:shadow-md dark:bg-gray-900 ${className}`}
     >
       <div className='p-6'>
-        <div className='flex items-start justify-between gap-6'>
+        <div className='flex items-center justify-between gap-6'>
           <div className='flex-1'>
             <h3 className='mb-1 text-base font-semibold text-gray-900 dark:text-white'>
               {title}
