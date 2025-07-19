@@ -42,6 +42,7 @@ describe('searchService', () => {
       description: 'Close all duplicate tabs',
       alias: ['dup'],
       type: 'action',
+      immediateAlias: true,
     },
   ];
 
@@ -309,6 +310,50 @@ describe('searchService', () => {
         loading: false,
         error: 'Network error',
       });
+    });
+
+    it('should handle action commands without calling search', async () => {
+      const result = await performSearch({
+        query: 'dup',
+        availableCommands: mockCommands,
+        broker: mockBroker,
+      });
+
+      expect(result).toEqual({
+        results: [
+          {
+            id: 'tab.close-duplicates',
+            title: 'Close Duplicate Tabs',
+            description: 'Close all duplicate tabs',
+            icon: undefined,
+            type: 'command',
+            actions: [
+              {
+                id: 'select',
+                label: 'Select',
+                shortcut: 'Enter',
+                primary: true,
+              },
+            ],
+            metadata: {
+              command: {
+                id: 'tab.close-duplicates',
+                name: 'Close Duplicate Tabs',
+                description: 'Close all duplicate tabs',
+                alias: ['dup'],
+                type: 'action',
+                immediateAlias: true,
+              },
+            },
+          },
+        ],
+        loading: false,
+        activeExtension: 'tab',
+        activeCommand: 'close-duplicates',
+      });
+
+      // Should not call search for action commands
+      expect(mockBroker.sendSearchRequest).not.toHaveBeenCalled();
     });
   });
 
