@@ -8,7 +8,7 @@ export default function AboutCard(): JSX.Element {
     version: '0.6.1',
     description:
       'Spotlight for your browser - Instantly search, switch, and manage tabs with a keyboard-first command palette.',
-    github: 'https://github.com/anthropics/omnitab',
+    github: 'https://github.com/tears330/omnitab',
   };
 
   const openGitHub = () => {

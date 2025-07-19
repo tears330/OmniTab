@@ -70,7 +70,7 @@ class CoreExtension extends BaseExtension {
     }
 
     const registry = ExtensionRegistry.getInstance();
-    const allCommands = registry.getAllCommands();
+    const allCommands = await registry.getEnabledCommands();
 
     // Use the centralized search handler
     const results = handleCoreSearch(commandId, payload.query, allCommands);

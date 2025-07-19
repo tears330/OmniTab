@@ -6,10 +6,15 @@ import { create } from 'zustand';
 
 import { getContentBroker } from '@/services/messageBroker';
 import { performSearch as performSearchService } from '@/services/searchService';
-import { settingsService } from '@/services/settingsService';
+import { settingsBroker } from '@/services/settingsBroker';
 import createStoreLogger from '@/utils/storeLogger';
 
-import { TAB_EXTENSION_ID, TabCommandId } from '../extensions';
+import {
+  CORE_EXTENSION_ID,
+  CoreCommandId,
+  TAB_EXTENSION_ID,
+  TabCommandId,
+} from '../extensions';
 
 interface OmniTabStore extends OmniTabState {
   // Theme
@@ -236,8 +241,8 @@ export const useOmniTabStore = create<OmniTabStore>()((set, get) => ({
     try {
       const broker = getContentBroker();
       const response = await broker.sendActionRequest(
-        'core',
-        'get-commands',
+        CORE_EXTENSION_ID,
+        CoreCommandId.GET_COMMANDS,
         'list'
       );
 
@@ -449,7 +454,7 @@ export const useOmniTabStore = create<OmniTabStore>()((set, get) => ({
 useOmniTabStore.getState().loadCommands();
 
 // Load theme from settings
-settingsService
+settingsBroker
   .getSettings()
   .then((settings) => {
     useOmniTabStore.getState().setTheme(settings.appearance.theme);

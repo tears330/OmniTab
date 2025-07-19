@@ -7,6 +7,7 @@ interface SidebarProps {
 
 const categories = [
   { id: 'general', label: 'General', icon: '⚙️' },
+  { id: 'extensions', label: 'Extensions', icon: '🧩' },
   { id: 'about', label: 'About', icon: 'ℹ️' },
 ];
 

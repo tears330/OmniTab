@@ -142,6 +142,16 @@ export class ExtensionRegistry {
     return enabledCommands;
   }
 
+  /**
+   * Refresh enabled commands cache - forces re-evaluation of command settings
+   * This should be called when command settings are updated
+   */
+  // eslint-disable-next-line class-methods-use-this
+  async refreshEnabledCommands(): Promise<void> {
+    // Force refresh the settings cache to get the latest command settings
+    await settingsService.refreshCache();
+  }
+
   findCommandByAlias(
     alias: string
   ): { extension: BaseExtension; command: Command } | undefined {
