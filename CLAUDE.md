@@ -67,6 +67,10 @@ When creating new extensions, follow this modular pattern:
 - **Extension Registry** (`src/services/extensionRegistry.ts`) - Manages extension lifecycle and command routing
 - **Message Broker** (`src/services/messageBroker.ts`) - Handles communication between content and background scripts
 - **OmniTab Store** (`src/stores/omniTabStore.ts`) - Zustand store for global state management with debounced search and automatic initialization
+- **Settings System** - Comprehensive settings management with Chrome storage integration:
+  - `src/services/settingsService.ts` - Settings storage, validation, and change notifications
+  - `src/services/settingsManager.ts` - Settings application and theme management
+  - `src/types/settings.ts` - Settings schema and type definitions
 
 ## Key Commands
 
@@ -101,6 +105,10 @@ pnpm preview
 - **Content Script**: `src/content/` - Injects the OmniTab search overlay into web pages
   - `Content.tsx` - Main container that manages overlay visibility
   - `OmniTab.tsx` - Refactored modular search interface component
+- **Options Page**: `src/options/` - Extension settings and configuration interface
+  - `Options.tsx` - Main options page with settings management
+  - `components/` - Modular options page components (ThemeCard, ShortcutCard, etc.)
+- **Popup**: `src/popup/` - Extension popup interface (optional quick access)
 - **Manifest**: `src/manifest.ts` - Chrome extension manifest v3 with keyboard shortcut (Ctrl/Cmd+J) and tab permissions
 
 ### Modular Architecture (Refactored)
@@ -118,6 +126,8 @@ The main OmniTab component has been refactored into a clean, modular architectur
 #### **Custom Hooks**
 
 - `src/hooks/useKeyboardNavigation.ts` - Keyboard event handling and action execution
+- `src/hooks/useSettings.ts` - Settings management and reactive updates
+- `src/hooks/useTheme.ts` - Theme management with system preference detection
 - **Zustand Store Integration**: Components use `useOmniTabStore` directly for optimal performance and automatic reactivity
 
 #### **Reusable Components**
@@ -138,7 +148,7 @@ The main OmniTab component has been refactored into a clean, modular architectur
 - **React**: v19.1.0 with React Refresh for development
 - **State Management**: Zustand for global state management with TypeScript support
 - **Utility Library**: es-toolkit for optimized utility functions (debounce, clamp, etc.)
-- **Styling**: Tailwind CSS + DaisyUI component library
+- **Styling**: Tailwind CSS + DaisyUI component library with class-based dark mode (`darkMode: ['class', '[data-theme="dark"]']`)
 - **Testing**: Jest with ts-jest, @testing-library/react, jsdom environment
 - **Linting**: ESLint with Airbnb config + TypeScript rules + Jest plugin
 - **Formatting**: Prettier with import sorting and Tailwind class ordering
@@ -151,14 +161,14 @@ The main OmniTab component has been refactored into a clean, modular architectur
 2. Dev mode includes visual indicators (e.g., "➡️ Dev" in extension name)
 3. Font assets are bundled and served from `src/assets/fonts/`
 4. Fallback icons are accessible via `chrome.runtime.getURL('icon16.png')` - icons are included in `web_accessible_resources` for production builds
-5. Permissions: `tabs`, `history`, `bookmarks`, `favicon`, and `topSites` are configured in manifest, with optional `tabGroups` permission
+5. Permissions: `tabs`, `history`, `bookmarks`, `favicon`, `topSites`, and `storage` are configured in manifest, with optional `tabGroups` permission
 
 ### Code Quality Tools
 
 - **Commit Convention**: Conventional commits enforced via commitlint
 - **Pre-commit**: Automatically runs ESLint fix and Prettier formatting on staged files
 - **Import Order**: Enforced by Prettier plugin with specific grouping (built-ins → React → types → third-party → local → styles)
-- **Testing**: Comprehensive unit tests with 93%+ coverage for fuzzy search algorithm
+- **Testing**: Comprehensive unit tests with high coverage across all major components
 - **Type Safety**: Strict TypeScript with no `any` types in production code
 
 ### Utility Functions Best Practices
@@ -230,6 +240,89 @@ OmniTab supports multiple navigation methods for maximum accessibility:
 - **Category Priority**: Tabs ranked higher than history, history higher than bookmarks, bookmarks higher than topsites
 - **Most Visited Sites**: Access Chrome's top sites for quick navigation
 
+### Settings System
+
+OmniTab includes a comprehensive settings system with Chrome storage integration and reactive updates:
+
+#### **Settings Architecture**
+
+The settings system is built with a modular architecture:
+
+- **Settings Service** (`src/services/settingsService.ts`) - Core settings management with Chrome storage integration
+- **Settings Manager** (`src/services/settingsManager.ts`) - Settings application and theme management with system preference detection
+- **Settings Types** (`src/types/settings.ts`) - Complete type definitions and validation schemas
+- **Settings Hooks** - React hooks for reactive settings integration:
+  - `src/hooks/useSettings.ts` - Settings state management and updates
+  - `src/hooks/useTheme.ts` - Theme management with system preference detection
+
+#### **Settings Schema**
+
+```typescript
+interface ExtensionSettings {
+  appearance: {
+    theme: 'system' | 'light' | 'dark';
+  };
+  commands: {
+    [commandId: string]: {
+      enabled: boolean;
+    };
+  };
+  version: number;
+}
+```
+
+#### **Settings Features**
+
+- **Chrome Storage Integration**: Automatic sync across browser instances using `chrome.storage.sync`
+- **Schema Validation**: Runtime validation and migration of settings data
+- **Default Settings**: Graceful fallback to defaults when storage is unavailable
+- **Change Notifications**: Event-driven updates with listener pattern
+- **Theme Management**: System preference detection with manual override support
+- **Command Management**: Individual command enable/disable functionality
+- **Error Handling**: Robust error handling with graceful degradation
+- **Service Worker Support**: Works in both DOM and service worker contexts
+
+#### **Settings Usage**
+
+```typescript
+// Using the settings service directly
+import { settingsService } from '@/services/settingsService';
+
+// Load settings
+const settings = await settingsService.getSettings();
+
+// Update appearance settings
+await settingsService.updateSettings('appearance', { theme: 'dark' });
+
+// Check if a command is enabled
+const isEnabled = await settingsService.isCommandEnabled('tab.search');
+
+// Using React hooks
+import { useSettings } from '@/hooks/useSettings';
+import { useTheme } from '@/hooks/useTheme';
+
+function MyComponent() {
+  const { settings, updateSettings } = useSettings();
+  const { theme, setTheme } = useTheme();
+
+  return (
+    <div data-theme={theme}>
+      <button onClick={() => setTheme('dark')}>
+        Switch to Dark Theme
+      </button>
+    </div>
+  );
+}
+```
+
+#### **Settings Storage**
+
+- **Storage Key**: `omnitab_settings` in Chrome sync storage
+- **Automatic Sync**: Settings automatically sync across browser instances
+- **Migration Support**: Automatic migration from older settings versions
+- **Validation**: Runtime validation ensures data integrity
+- **Error Recovery**: Graceful fallback to defaults on storage errors
+
 ### Testing
 
 The project includes comprehensive testing with Jest:
@@ -249,8 +342,13 @@ The project has comprehensive test coverage across all major components:
 - **Extensions**: Comprehensive testing for all extension types (core, tab, history, bookmark, topsites)
 - **Components**: React components tested with user interaction scenarios
 - **Utilities**: High coverage for search, keyboard, URL, and store utilities
-- **Services**: Extension registry, message broker, and search service integration
-- **Total Test Files**: 26 test files covering all major functionality
+- **Services**: Extension registry, message broker, search service, and comprehensive settings system with Chrome storage integration
+- **Settings System**: Complete test coverage (55 tests total) including:
+  - Settings service with Chrome storage mocking and validation testing
+  - Settings manager with theme detection and error handling
+  - Edge cases for service worker contexts and storage failures
+  - Listener patterns and reactive updates
+- **Total Test Files**: 29 test files covering all major functionality
 - **Test Environment**: Jest with jsdom and React Testing Library support
 
 #### **Running Tests**
@@ -376,3 +474,35 @@ pnpm lint
 - Each extension can provide multiple commands (search or action types)
 - Command aliases enable quick access (e.g., 't' for tabs, 'h' for history, 'b' for bookmarks, 'top' for topsites)
 - **Constants First**: Replace all hardcoded values with enums and constants defined in a dedicated constants file
+
+### Settings System Integration
+
+When working with the settings system, follow these patterns:
+
+#### **Settings Service Usage**
+
+- **Always use the singleton**: Import `settingsService` instance, not the class
+- **Await async operations**: All settings operations are async due to Chrome storage
+- **Handle errors gracefully**: Use try-catch blocks for settings operations
+- **Use reactive patterns**: Leverage change listeners for real-time updates
+
+#### **Theme Integration**
+
+- **Use data-theme attributes**: Apply themes via `data-theme="dark|light"` on component roots
+- **System preference detection**: Use `SettingsManager.getCurrentTheme()` for resolved theme values
+- **Store integration**: Theme is automatically loaded and managed in `omniTabStore`
+- **Tailwind configuration**: Dark mode uses class-based detection with `[data-theme="dark"]` selector
+
+#### **Command Management**
+
+- **Extension registry integration**: Commands are automatically filtered based on settings
+- **Default enabled**: New commands default to enabled unless explicitly disabled
+- **Batch operations**: Use `getEnabledCommands()` for bulk command filtering
+- **Settings updates**: Command changes trigger automatic re-registration
+
+#### **Testing Settings**
+
+- **Mock Chrome APIs**: Use proper Jest mocking for `chrome.storage` and `chrome.runtime`
+- **Test edge cases**: Include service worker contexts and storage failures
+- **Validate schemas**: Test settings validation and migration logic
+- **Mock window.matchMedia**: Use `Object.defineProperty` for theme detection tests

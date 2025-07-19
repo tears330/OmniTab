@@ -8,6 +8,7 @@ import type {
 
 import { BaseExtension, ExtensionRegistry } from '../extensionRegistry';
 import { getBackgroundBroker } from '../messageBroker';
+import { settingsService } from '../settingsService';
 
 // Mock the message broker
 jest.mock('../messageBroker', () => ({
@@ -15,6 +16,13 @@ jest.mock('../messageBroker', () => ({
     registerExtension: jest.fn(),
     unregisterExtension: jest.fn(),
   })),
+}));
+
+// Mock the settings service
+jest.mock('../settingsService', () => ({
+  settingsService: {
+    isCommandEnabled: jest.fn(() => Promise.resolve(true)),
+  },
 }));
 
 // Create a concrete test extension
@@ -235,6 +243,64 @@ describe('ExtensionRegistry', () => {
 
     it('should return empty array when no extensions registered', () => {
       expect(registry.getAllCommands()).toEqual([]);
+    });
+  });
+
+  describe('getEnabledCommands', () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('should return only enabled commands', async () => {
+      const extension = new TestExtension();
+      await registry.registerExtension(extension);
+
+      // Mock settings service to return different values for different commands
+      (settingsService.isCommandEnabled as jest.Mock)
+        .mockResolvedValueOnce(true) // test.search enabled
+        .mockResolvedValueOnce(false); // test.action disabled
+
+      const commands = await registry.getEnabledCommands();
+
+      expect(commands).toHaveLength(1);
+      expect(commands[0].id).toBe('test.search');
+      expect(settingsService.isCommandEnabled).toHaveBeenCalledWith(
+        'test.search'
+      );
+      expect(settingsService.isCommandEnabled).toHaveBeenCalledWith(
+        'test.action'
+      );
+    });
+
+    it('should return all commands when all are enabled', async () => {
+      const extension = new TestExtension();
+      await registry.registerExtension(extension);
+
+      // Mock all commands as enabled
+      (settingsService.isCommandEnabled as jest.Mock).mockResolvedValue(true);
+
+      const commands = await registry.getEnabledCommands();
+
+      expect(commands).toHaveLength(2);
+      expect(commands[0].id).toBe('test.search');
+      expect(commands[1].id).toBe('test.action');
+    });
+
+    it('should return empty array when all commands are disabled', async () => {
+      const extension = new TestExtension();
+      await registry.registerExtension(extension);
+
+      // Mock all commands as disabled
+      (settingsService.isCommandEnabled as jest.Mock).mockResolvedValue(false);
+
+      const commands = await registry.getEnabledCommands();
+
+      expect(commands).toHaveLength(0);
+    });
+
+    it('should return empty array when no extensions registered', async () => {
+      const commands = await registry.getEnabledCommands();
+      expect(commands).toEqual([]);
     });
   });
 

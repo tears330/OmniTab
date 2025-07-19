@@ -16,6 +16,16 @@ function OmniTab({ isOpen, onClose }: OmniTabProps) {
   const store = useOmniTabStore();
   const inputRef = React.useRef<HTMLInputElement>(null);
 
+  // Get resolved theme (convert 'system' to 'light' or 'dark')
+  const resolvedTheme = React.useMemo(() => {
+    if (store.theme === 'system') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light';
+    }
+    return store.theme;
+  }, [store.theme]);
+
   // Focus input when opened
   useEffect(() => {
     if (isOpen && inputRef.current) {
@@ -74,6 +84,7 @@ function OmniTab({ isOpen, onClose }: OmniTabProps) {
   return (
     <div
       data-omnitab
+      data-theme={resolvedTheme}
       className='fixed inset-0 z-[999999] flex items-start justify-center bg-black/30 backdrop-blur-md dark:bg-black/50'
       onClick={onClose}
       onKeyDown={handleContainerKeyDown}

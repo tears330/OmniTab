@@ -11,9 +11,14 @@
 
 import { createRoot } from 'react-dom/client';
 
+import { settingsManager } from '@/services/settingsManager';
+
 import ContentV2 from './Content';
 
 import '@assets/styles/index.css';
+
+// Initialize settings manager
+settingsManager.initialize();
 
 const container = document.createElement('div');
 

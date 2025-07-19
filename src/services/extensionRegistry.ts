@@ -11,6 +11,7 @@ import type {
 import { buildCommandId } from '@/utils/searchUtils';
 
 import { getBackgroundBroker } from './messageBroker';
+import { settingsService } from './settingsService';
 
 // Abstract base class for extensions
 export abstract class BaseExtension implements Extension {
@@ -122,6 +123,23 @@ export class ExtensionRegistry {
       );
     }
     return commands;
+  }
+
+  async getEnabledCommands(): Promise<Command[]> {
+    const allCommands = this.getAllCommands();
+    const enabledCommands: Command[] = [];
+
+    // Filter out disabled commands based on settings
+    // eslint-disable-next-line no-restricted-syntax
+    for (const command of allCommands) {
+      // eslint-disable-next-line no-await-in-loop
+      const isEnabled = await settingsService.isCommandEnabled(command.id);
+      if (isEnabled) {
+        enabledCommands.push(command);
+      }
+    }
+
+    return enabledCommands;
   }
 
   findCommandByAlias(

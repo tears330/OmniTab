@@ -1,7 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
-  darkMode: 'media', // Use media queries for automatic system theme detection
+  darkMode: ['class', '[data-theme="dark"]'], // Use class or data-theme attribute for dark mode
   theme: {
     extend: {
       animation: {

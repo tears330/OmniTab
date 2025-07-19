@@ -1,15 +1,20 @@
 /* eslint-disable import/prefer-default-export */
 import type { Command, OmniTabState, SearchResult } from '@/types/extension';
+import type { Theme } from '@/types/settings';
 import { clamp, debounce, DebouncedFunction } from 'es-toolkit';
 import { create } from 'zustand';
 
 import { getContentBroker } from '@/services/messageBroker';
 import { performSearch as performSearchService } from '@/services/searchService';
+import { settingsService } from '@/services/settingsService';
 import createStoreLogger from '@/utils/storeLogger';
 
 import { TAB_EXTENSION_ID, TabCommandId } from '../extensions';
 
 interface OmniTabStore extends OmniTabState {
+  // Theme
+  theme: Theme;
+
   // Actions Menu State
   isActionsMenuOpen: boolean;
   actionsMenuSelectedIndex: number;
@@ -22,6 +27,7 @@ interface OmniTabStore extends OmniTabState {
   setLoading: (loading: boolean) => void;
   setError: (error: string | undefined) => void;
   setSelectedIndex: (index: number) => void;
+  setTheme: (theme: Theme) => void;
   setActiveExtension: (payload?: {
     extensionId: string;
     commandId: string;
@@ -63,6 +69,7 @@ const isDevMode = process.env.NODE_ENV === 'development';
 // Create store with conditional devtools
 export const useOmniTabStore = create<OmniTabStore>()((set, get) => ({
   ...initialState,
+  theme: 'system',
   isActionsMenuOpen: false,
   actionsMenuSelectedIndex: 0,
 
@@ -143,6 +150,8 @@ export const useOmniTabStore = create<OmniTabStore>()((set, get) => ({
     );
   },
 
+  setTheme: (theme: Theme) => set({ theme }, false),
+
   setActiveExtension: (payload?: { extensionId: string; commandId: string }) =>
     set(
       {
@@ -171,6 +180,7 @@ export const useOmniTabStore = create<OmniTabStore>()((set, get) => ({
     set(
       {
         ...initialState,
+        theme: 'system',
         isActionsMenuOpen: false,
         actionsMenuSelectedIndex: 0,
       },
@@ -435,8 +445,18 @@ export const useOmniTabStore = create<OmniTabStore>()((set, get) => ({
   },
 }));
 
-// Initialize store - load commands on creation
+// Initialize store - load commands and theme on creation
 useOmniTabStore.getState().loadCommands();
+
+// Load theme from settings
+settingsService
+  .getSettings()
+  .then((settings) => {
+    useOmniTabStore.getState().setTheme(settings.appearance.theme);
+  })
+  .catch(() => {
+    // Keep default theme if settings load fails
+  });
 
 // Expose store to window in development for debugging
 if (isDevMode && typeof window !== 'undefined') {

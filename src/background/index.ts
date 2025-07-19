@@ -1,4 +1,5 @@
 import { ExtensionRegistry } from '@/services/extensionRegistry';
+import { settingsManager } from '@/services/settingsManager';
 
 import {
   BookmarkExtension,
@@ -30,7 +31,15 @@ async function initializeExtensions() {
 }
 
 // Initialize on startup
-initializeExtensions();
+async function initialize() {
+  // Initialize settings manager first
+  await settingsManager.initialize();
+
+  // Then initialize extensions
+  await initializeExtensions();
+}
+
+initialize();
 
 // Listen for keyboard command
 chrome.commands.onCommand.addListener((command) => {

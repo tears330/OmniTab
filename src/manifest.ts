@@ -26,7 +26,14 @@ export default defineManifest({
     48: 'icon48.png',
     128: 'icon128.png',
   },
-  permissions: ['tabs', 'history', 'bookmarks', 'favicon', 'topSites'],
+  permissions: [
+    'tabs',
+    'history',
+    'bookmarks',
+    'favicon',
+    'topSites',
+    'storage',
+  ],
   optional_permissions: ['tabGroups'],
   host_permissions: [],
   content_security_policy: {
@@ -58,6 +65,7 @@ export default defineManifest({
       matches: ['<all_urls>'],
     },
   ],
+  options_page: 'src/options/index.html',
   web_accessible_resources: [
     {
       resources: ['*.js', '*.css', 'public/*', '*.png', '_favicon/*'],

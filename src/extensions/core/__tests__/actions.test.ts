@@ -76,14 +76,14 @@ describe('Core Extension Actions', () => {
   });
 
   describe('getCommands', () => {
-    it('should return all commands from registry', async () => {
+    it('should return enabled commands from registry', async () => {
       const mockCommands = [
         { id: 'cmd1', name: 'Command 1', description: 'Test command' },
         { id: 'cmd2', name: 'Command 2', description: 'Another command' },
       ];
 
       const mockRegistry = {
-        getAllCommands: jest.fn().mockReturnValue(mockCommands),
+        getEnabledCommands: jest.fn().mockResolvedValue(mockCommands),
       };
 
       (ExtensionRegistry.getInstance as jest.Mock).mockReturnValue(
@@ -92,10 +92,28 @@ describe('Core Extension Actions', () => {
 
       const result = await getCommands();
 
-      expect(mockRegistry.getAllCommands).toHaveBeenCalled();
+      expect(mockRegistry.getEnabledCommands).toHaveBeenCalled();
       expect(result).toEqual({
         success: true,
         data: { commands: mockCommands },
+      });
+    });
+
+    it('should handle empty enabled commands list', async () => {
+      const mockRegistry = {
+        getEnabledCommands: jest.fn().mockResolvedValue([]),
+      };
+
+      (ExtensionRegistry.getInstance as jest.Mock).mockReturnValue(
+        mockRegistry
+      );
+
+      const result = await getCommands();
+
+      expect(mockRegistry.getEnabledCommands).toHaveBeenCalled();
+      expect(result).toEqual({
+        success: true,
+        data: { commands: [] },
       });
     });
   });

@@ -78,3 +78,6 @@ export type MessageResponse = SearchTabsResponse | SuccessResponse;
 
 // Re-export search types
 export * from './search';
+
+// Re-export settings types
+export * from './settings';
