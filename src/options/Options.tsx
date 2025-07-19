@@ -2,6 +2,7 @@ import { JSX, useState } from 'react';
 
 import useTheme from '../hooks/useTheme';
 import AboutCard from './components/AboutCard';
+import ExtensionsCard from './components/ExtensionsCard';
 import InfoCard from './components/InfoCard';
 import OptionsHeader from './components/OptionsHeader';
 import ShortcutCard from './components/ShortcutCard';
@@ -28,6 +29,8 @@ export default function Options(): JSX.Element {
             <InfoCard />
           </div>
         );
+      case 'extensions':
+        return <ExtensionsCard />;
       case 'about':
         return <AboutCard />;
       default:
@@ -40,7 +43,7 @@ export default function Options(): JSX.Element {
       <OptionsHeader />
 
       {/* Main Content */}
-      <div className='mx-auto max-w-7xl px-6 py-8'>
+      <div className='mx-auto max-w-5xl px-6 py-8'>
         <div className='flex gap-8'>
           {/* Left Sidebar */}
           <Sidebar

@@ -22,6 +22,10 @@ jest.mock('@/services/searchService', () => ({
 
 // Mock extensions
 jest.mock('../../extensions', () => ({
+  CORE_EXTENSION_ID: 'core',
+  CoreCommandId: {
+    GET_COMMANDS: 'get-commands',
+  },
   TAB_EXTENSION_ID: 'tab',
   TabCommandId: {
     SEARCH: 'search-tab',
@@ -38,6 +42,7 @@ jest.mock('@/services/settingsService', () => ({
         version: 1,
       })
     ),
+    refreshCache: jest.fn(() => Promise.resolve()),
   },
 }));
 

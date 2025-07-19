@@ -3,7 +3,7 @@ import { JSX } from 'react';
 export default function OptionsHeader(): JSX.Element {
   return (
     <div className='bg-white/80 shadow-sm backdrop-blur-sm dark:bg-gray-900/80 dark:shadow-gray-800/20'>
-      <div className='mx-auto max-w-4xl px-6 py-8'>
+      <div className='mx-auto max-w-5xl px-6 py-8'>
         <div className='flex items-center gap-4'>
           <div className='h-16 w-16 overflow-hidden rounded-2xl shadow-lg'>
             <img

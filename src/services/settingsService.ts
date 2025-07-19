@@ -24,6 +24,45 @@ class SettingsService {
 
   private cachedSettings: ExtensionSettings | null = null;
 
+  private initialized = false;
+
+  /**
+   * Initialize the settings service
+   */
+  async initialize(): Promise<void> {
+    if (this.initialized) {
+      return;
+    }
+
+    // Load initial settings
+    const settings = await this.loadSettings();
+    await this.applySettings(settings);
+
+    // Listen for settings changes
+    this.addSettingsChangeListener((event) => {
+      this.handleSettingsChange(event);
+    });
+
+    // Listen for storage changes from other tabs/windows
+    if (
+      typeof chrome !== 'undefined' &&
+      chrome.storage &&
+      chrome.storage.onChanged
+    ) {
+      chrome.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName === 'sync' && changes.omnitab_settings) {
+          const newSettings = changes.omnitab_settings
+            .newValue as ExtensionSettings;
+          if (newSettings) {
+            this.applySettings(newSettings);
+          }
+        }
+      });
+    }
+
+    this.initialized = true;
+  }
+
   /**
    * Load settings from Chrome storage
    */
@@ -115,6 +154,15 @@ class SettingsService {
       return this.cachedSettings;
     }
     return this.loadSettings();
+  }
+
+  /**
+   * Force refresh the settings cache from storage
+   * This should be called when settings are updated from another context
+   */
+  async refreshCache(): Promise<void> {
+    this.cachedSettings = null;
+    await this.loadSettings();
   }
 
   /**
@@ -229,6 +277,79 @@ class SettingsService {
   }
 
   /**
+   * Apply all settings
+   */
+  // eslint-disable-next-line class-methods-use-this, @typescript-eslint/no-unused-vars
+  private async applySettings(_settings: ExtensionSettings): Promise<void> {
+    // Apply command settings (will be used by extension registry)
+    // Command settings are handled by the extension registry when checking if commands are enabled
+  }
+
+  /**
+   * Handle settings change events
+   */
+  private handleSettingsChange(event: SettingsChangeEvent): void {
+    switch (event.type) {
+      case 'commands':
+        // Notify extension registry of command changes
+        SettingsService.notifyCommandChanges(event);
+        break;
+      case 'all':
+        this.applySettings(event.newSettings);
+        break;
+      default:
+        // Handle any unknown event types silently
+        break;
+    }
+
+    // Broadcast settings changes to all frontend contexts
+    this.broadcastSettingsChange(event.newSettings);
+  }
+
+  /**
+   * Notify extension registry about command changes
+   */
+  private static notifyCommandChanges(event: SettingsChangeEvent): void {
+    // Send message to background script to update command availability
+    if (typeof chrome !== 'undefined' && chrome.runtime) {
+      chrome.runtime.sendMessage({
+        action: 'settings-commands-updated',
+        oldCommands: event.oldSettings.commands,
+        newCommands: event.newSettings.commands,
+      });
+    }
+  }
+
+  /**
+   * Broadcast settings changes to all frontend contexts
+   */
+  // eslint-disable-next-line class-methods-use-this
+  private broadcastSettingsChange(settings: ExtensionSettings): void {
+    // Send message to all tabs/contexts about settings change
+    if (typeof chrome !== 'undefined' && chrome.tabs) {
+      chrome.tabs.query({}, (tabs) => {
+        tabs.forEach((tab) => {
+          if (tab.id) {
+            chrome.tabs.sendMessage(
+              tab.id,
+              {
+                action: 'settings-changed',
+                settings,
+              },
+              () => {
+                // Ignore errors for tabs that don't have content scripts
+                if (chrome.runtime.lastError) {
+                  // Silent error handling
+                }
+              }
+            );
+          }
+        });
+      });
+    }
+  }
+
+  /**
    * Notify all listeners of settings changes
    */
   private notifySettingsChange(
@@ -251,10 +372,45 @@ class SettingsService {
       }
     });
   }
+
+  /**
+   * Get current theme with system preference resolved
+   */
+  static async getCurrentTheme(): Promise<'light' | 'dark'> {
+    // Create a temporary instance to avoid circular reference
+    const tempService = new SettingsService();
+    const settings = await tempService.getSettings();
+    const { theme } = settings.appearance;
+
+    if (theme === 'system') {
+      // Check if we're in a DOM context
+      if (typeof window !== 'undefined') {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches
+          ? 'dark'
+          : 'light';
+      }
+      // Default to light in service worker context
+      return 'light';
+    }
+
+    return theme;
+  }
+
+  /**
+   * Check if a command is enabled (static method)
+   */
+  static async isCommandEnabled(commandId: string): Promise<boolean> {
+    // Create a temporary instance to avoid circular reference
+    const tempService = new SettingsService();
+    return tempService.isCommandEnabled(commandId);
+  }
 }
 
 // Export singleton instance
 export const settingsService = new SettingsService();
+
+// Export alias for backward compatibility with settingsManager
+export const settingsManager = settingsService;
 
 // Export the class for testing
 export { SettingsService };
