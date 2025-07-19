@@ -13,6 +13,7 @@ export enum CoreCommandId {
   RELOAD = 'reload',
   SEARCH_COMMANDS = 'search-commands',
   GET_COMMANDS = 'get-commands',
+  SETTINGS = 'settings',
 }
 
 export enum CoreCommandType {
@@ -36,6 +37,7 @@ export const CORE_MESSAGES = {
   HELP_OPENING: 'Opening help page',
   EXTENSIONS_RELOADED: 'Extensions reloaded',
   SEARCH_COMMANDS_USAGE: 'Use > prefix to search commands',
+  SETTINGS_OPENING: 'Opening OmniTab settings',
   ACTION_FAILED: 'Action failed',
   UNKNOWN_COMMAND: (commandId: string) => `Unknown command: ${commandId}`,
 } as const;
@@ -44,4 +46,5 @@ export const CORE_ALIASES = {
   HELP: ['?'],
   RELOAD: ['reload'],
   SEARCH_COMMANDS: ['>'],
+  SETTINGS: ['settings', 'config', 'preferences'],
 } as const;

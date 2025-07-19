@@ -6,7 +6,12 @@ import type {
 
 import { BaseExtension, ExtensionRegistry } from '@/services/extensionRegistry';
 
-import { getCommands, handleSearchCommands, reloadExtensions } from './actions';
+import {
+  getCommands,
+  handleSearchCommands,
+  openSettings,
+  reloadExtensions,
+} from './actions';
 import {
   CORE_ALIASES,
   CORE_EXTENSION_DESCRIPTION,
@@ -51,6 +56,13 @@ class CoreExtension extends BaseExtension {
       type: CoreCommandType.SEARCH,
       immediateAlias: true,
     },
+    {
+      id: CoreCommandId.SETTINGS,
+      name: 'Open Settings',
+      description: 'Open OmniTab settings page',
+      alias: [...CORE_ALIASES.SETTINGS],
+      type: CoreCommandType.ACTION,
+    },
   ];
 
   // eslint-disable-next-line class-methods-use-this
@@ -93,6 +105,9 @@ class CoreExtension extends BaseExtension {
 
         case CoreCommandId.SEARCH_COMMANDS:
           return handleSearchCommands();
+
+        case CoreCommandId.SETTINGS:
+          return openSettings();
 
         default:
           return {
