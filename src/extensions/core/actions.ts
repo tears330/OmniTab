@@ -30,11 +30,11 @@ export async function reloadExtensions(): Promise<ExtensionResponse> {
 }
 
 /**
- * Get all available commands
+ * Get all available commands (filtered by settings)
  */
 export async function getCommands(): Promise<ExtensionResponse> {
   const registry = ExtensionRegistry.getInstance();
-  const commands = registry.getAllCommands();
+  const commands = await registry.getEnabledCommands();
 
   return {
     success: true,

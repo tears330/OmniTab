@@ -1,8 +1,16 @@
-import styles from '@assets/styles/index.css?inline';
-import createShadowRoot from '@utils/createShadowRoot';
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+
+import '@assets/styles/index.css';
 
 import Options from './Options';
 
-const root = createShadowRoot(styles);
-
-root.render(<Options />);
+const container = document.getElementById('root');
+if (container) {
+  const root = createRoot(container);
+  root.render(
+    <StrictMode>
+      <Options />
+    </StrictMode>
+  );
+}
